@@ -43,7 +43,7 @@ export async function fetchBankLogo(bankName: string): Promise<string | null> {
       `${primaryWord}bank.com`,
       `www.${primaryWord}.com`,
     ];
-    
+    /*
     for (const domain of domainAttempts) {
       try {
         // Use Clearbit Logo API (free, no API key needed for basic usage)
@@ -58,7 +58,7 @@ export async function fetchBankLogo(bankName: string): Promise<string | null> {
         // Continue to next attempt
       }
     }
-    
+   */ 
     // Strategy 2: Use a generic logo service
     // Some banks might have logos on CDNs or public services
     const normalizedName = bankName.toLowerCase()
@@ -66,7 +66,7 @@ export async function fetchBankLogo(bankName: string): Promise<string | null> {
       .replace(/\s+/g, '');
     
     // Try common patterns
-    const logoUrls = [
+  /*  const logoUrls = [
       `https://img.icons8.com/color/96/${normalizedName}.png`,
       `https://logo.clearbit.com/${normalizedName}.com`,
     ];
@@ -81,7 +81,7 @@ export async function fetchBankLogo(bankName: string): Promise<string | null> {
       } catch (e) {
         // Continue
       }
-    }
+    }*/
     
     // Strategy 3: Use a placeholder service that generates logos
     // For banks without logos, we'll use a service that generates colored logos
