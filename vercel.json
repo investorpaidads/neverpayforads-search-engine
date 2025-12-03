@@ -1,7 +1,7 @@
 {
   "version": 2,
   "functions": {
-    "api/*.ts": {
+    "src/app/api/*.ts": {
       "includeFiles": "data/*.json,public/data/*.db,public/data/*.json"
     }
   }
