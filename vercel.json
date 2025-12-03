@@ -1,20 +1,20 @@
 {
   "version": 2,
   "builds": [
-    { "src": "src/pages/**/*.{js,ts,jsx,tsx}", "use": "@vercel/next" },
-    { "src": "src/api/**/*.ts", "use": "@vercel/node" }
-  ],
-  "functions": {
-    "src/api/**/*.ts": {
-      "includeFiles": "public/data/*.json"
-
-
-
-
+    {
+      "src": "src/app/api/**/*.ts",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": "public/data/*.json"
+      }
+    },
+    {
+      "src": "package.json",
+      "use": "@vercel/next"
     }
-  },
+  ],
   "routes": [
-    { "src": "/data/(.*)", "dest": "/public/data/$1" }
-
+    { "src": "/data/(.*)", "dest": "/public/data/$1" },
+    { "src": "/api/(.*)", "dest": "/src/app/api/$1.ts" }
   ]
 }
