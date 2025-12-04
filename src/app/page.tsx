@@ -52,11 +52,11 @@ export default function Home() {
 
   const loader = useMemo(
     () =>
-const loader = new Loader({
-  apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY!,
-  version: "beta",               // <-- REQUIRED for AdvancedMarkerElement
-  libraries: ["marker"],         // <-- REQUIRED
-});
+      new Loader({
+        apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
+        version: "weekly",
+        libraries: ["visualization"],
+      }),
     []
   );
 
