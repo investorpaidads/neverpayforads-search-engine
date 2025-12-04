@@ -31,6 +31,9 @@ export default function Home() {
     bankName: "",
     cardholder: "",
   });
+    useEffect(() => {
+    console.log("Google Map ID:", process.env.NEXT_PUBLIC_GOOGLE_MAP_ID);
+  }, []);
   const [data, setData] = useState<{ rows: Card[]; total: number }>({
     rows: [],
     total: 0,
