@@ -55,7 +55,7 @@ export default function Home() {
       new Loader({
         apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
         version: "weekly",
-        libraries: ["visualization"],
+        libraries: ["visualization", "marker"],
       }),
     []
   );
