@@ -171,8 +171,10 @@ normalIconRef.current = {
 <svg xmlns="http://www.w3.org/2000/svg" width="48" height="60" viewBox="0 0 48 60">
   <defs>
     <linearGradient id="gradNormal" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#4a90e2"/>
-      <stop offset="100%" stop-color="#357ABD"/>
+      <stop offset="0%" stop-color="#80c0ff"/>  <!-- Top: light highlight -->
+      <stop offset="20%" stop-color="#4a90e2"/> <!-- Upper mid-tone -->
+      <stop offset="80%" stop-color="#357ABD"/> <!-- Lower mid-tone -->
+      <stop offset="100%" stop-color="#224E8C"/> <!-- Bottom: deep shadow -->
     </linearGradient>
     <filter id="shadowNormal" x="-50%" y="-50%" width="200%" height="200%">
       <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.2"/>
@@ -194,8 +196,10 @@ highlightIconRef.current = {
 <svg xmlns="http://www.w3.org/2000/svg" width="52" height="66" viewBox="0 0 52 66">
   <defs>
     <linearGradient id="gradHighlight" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#FF6B6B"/>
-      <stop offset="100%" stop-color="#FF3B3B"/>
+      <stop offset="0%" stop-color="#ff9999"/>  <!-- Top highlight -->
+      <stop offset="20%" stop-color="#ff6b6b"/> <!-- Upper mid-tone -->
+      <stop offset="80%" stop-color="#ff3b3b"/> <!-- Lower mid-tone -->
+      <stop offset="100%" stop-color="#cc0000"/> <!-- Bottom deep -->
     </linearGradient>
     <filter id="shadowHighlight" x="-50%" y="-50%" width="200%" height="200%">
       <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#000" flood-opacity="0.25"/>
@@ -209,6 +213,7 @@ highlightIconRef.current = {
   scaledSize: new google.maps.Size(52, 66),
   anchor: new google.maps.Point(26, 66),
 };
+
         // Clear previous markers
         markersRef.current.forEach((m) => m.setMap(null));
         markersRef.current = [];
