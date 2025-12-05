@@ -396,7 +396,11 @@ markersRef.current.push(marker);
               <tbody className="bg-white divide-y divide-gray-200">
                 {data.rows.map((r) => (
                   <tr
+  <tr
   key={r.id}
+  onClick={() => handleRowClick(r)}
+  className="hover:bg-gray-50 transition-colors cursor-pointer"
+>
   const handleRowClick = (card: Card) => {
   if (!mapRef.current || !card.latitude || !card.longitude) return;
 
