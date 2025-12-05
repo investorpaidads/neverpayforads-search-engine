@@ -143,20 +143,10 @@ export default function Home() {
 
         data.rows.forEach((card) => {
           if (card.latitude && card.longitude) {
-const contentDiv = document.createElement('div');
-contentDiv.style.background = 'white';
-contentDiv.style.borderRadius = '8px';
-contentDiv.style.padding = '4px';
-contentDiv.style.fontSize = '12px';
-contentDiv.style.fontWeight = 'bold';
-contentDiv.style.border = '1px solid #ccc';
-contentDiv.textContent = card.cardholder_name;
-
-const marker = new google.maps.marker.AdvancedMarkerElement({
-  position: { lat: card.latitude!, lng: card.longitude! },
+const marker = new google.maps.Marker({
+  position: { lat: card.latitude, lng: card.longitude },
   map,
   title: card.cardholder_name,
-  content: contentDiv,
 });
 
         if (!bounds.isEmpty()) map.fitBounds(bounds);
