@@ -247,6 +247,36 @@ useEffect(() => {
   points.forEach(p => bounds.extend(p));
   map.fitBounds(bounds);
 }, [data.rows]);
+  // Smoothly move map when filters or data change
+useEffect(() => {
+  const map = mapRef.current;
+  if (!map || typeof google === 'undefined') return;
+
+  const points = data.rows
+    .filter(c => {
+      const matchCountry = !filters.country || c.country_name === filters.country;
+      const matchState = !filters.state || c.state_name === filters.state;
+      const matchCard = !filters.cardNumber || c.card_number.includes(filters.cardNumber);
+      const matchBank = !filters.bankName || c.bank_name.includes(filters.bankName);
+      const matchHolder = !filters.cardholder || c.cardholder_name.includes(filters.cardholder);
+      return matchCountry && matchState && matchCard && matchBank && matchHolder && c.latitude && c.longitude;
+    })
+    .map(c => new google.maps.LatLng(c.latitude!, c.longitude!));
+
+  if (points.length === 0) {
+    // Smooth pan to world view
+    map.panTo({ lat: 0, lng: 0 });
+    map.setZoom(2);
+  } else if (points.length === 1) {
+    map.panTo(points[0]);
+    map.setZoom(10);
+  } else {
+    const bounds = new google.maps.LatLngBounds();
+    points.forEach(p => bounds.extend(p));
+    map.fitBounds(bounds);
+  }
+}, [filters, data.rows]);
+
   useEffect(() => {
     // Wait for DOM to be ready
 
