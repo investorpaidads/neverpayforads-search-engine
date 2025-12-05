@@ -186,6 +186,40 @@ useEffect(() => {
     }
   };
 }, [loader, data.rows, showHeatmap]);
+  // Move map center when filters change
+useEffect(() => {
+  const map = mapRef.current;
+  if (!map || typeof google === 'undefined') return;
+
+  // Get filtered points
+  const points = data.rows
+    .filter(c => {
+      // Apply the same filtering logic as your API (if client-side filtering needed)
+      const matchCountry = !filters.country || c.country_name === filters.country;
+      const matchState = !filters.state || c.state_name === filters.state;
+      const matchCard = !filters.cardNumber || c.card_number.includes(filters.cardNumber);
+      const matchBank = !filters.bankName || c.bank_name.includes(filters.bankName);
+      const matchHolder = !filters.cardholder || c.cardholder_name.includes(filters.cardholder);
+      return matchCountry && matchState && matchCard && matchBank && matchHolder && c.latitude && c.longitude;
+    })
+    .map(c => new google.maps.LatLng(c.latitude!, c.longitude!));
+
+  if (points.length === 0) {
+    // Reset to world view
+    map.setCenter({ lat: 0, lng: 0 });
+    map.setZoom(2);
+  } else if (points.length === 1) {
+    // Single marker
+    map.setCenter(points[0]);
+    map.setZoom(10);
+  } else {
+    // Fit bounds
+    const bounds = new google.maps.LatLngBounds();
+    points.forEach(p => bounds.extend(p));
+    map.fitBounds(bounds);
+  }
+}, [filters, data.rows]);
+
 useEffect(() => {
   const map = mapRef.current;
   if (!map || typeof google === 'undefined') return;
