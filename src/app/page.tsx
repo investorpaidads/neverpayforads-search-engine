@@ -35,7 +35,8 @@ export default function Home() {
     total: 0,
   });
   const [selectedId, setSelectedId] = useState<number | null>(null);
-
+const normalIconRef = useRef<any>(null);
+const highlightIconRef = useRef<any>(null);
 
 const handleRowClick = (card: Card) => {
   if (!mapRef.current || !card.latitude || !card.longitude) return;
@@ -52,10 +53,10 @@ const handleRowClick = (card: Card) => {
   // 3. Change marker icon immediately
   markersRef.current.forEach((m) => {
     if (m.cardId === card.id) {
-      m.setIcon(highlightIcon);
+      m.setIcon(highlightIconRef.current);
       m.setZIndex(2000);
     } else {
-      m.setIcon(normalIcon);
+      m.setIcon(normalIconRef.current);
       m.setZIndex(1000);
     }
   });
