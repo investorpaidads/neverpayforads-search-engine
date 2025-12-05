@@ -172,6 +172,20 @@ useEffect(() => {
   };
 
  // Auto-update map position when filtered results change
+
+ // Run after component mounts
+  setTimeout(initializeMap, 0);
+
+  return () => {
+    // Cleanup
+    markersRef.current.forEach((m) => m.setMap(null));
+    markersRef.current = [];
+    if (heatmapRef.current) {
+      heatmapRef.current.setMap(null);
+      heatmapRef.current = null;
+    }
+  };
+}, [loader, data.rows, showHeatmap]);
 useEffect(() => {
   const map = mapRef.current;
   if (!map || typeof google === 'undefined') return;
@@ -199,20 +213,6 @@ useEffect(() => {
   points.forEach(p => bounds.extend(p));
   map.fitBounds(bounds);
 }, [data.rows]);
- // Run after component mounts
-  setTimeout(initializeMap, 0);
-
-  return () => {
-    // Cleanup
-    markersRef.current.forEach((m) => m.setMap(null));
-    markersRef.current = [];
-    if (heatmapRef.current) {
-      heatmapRef.current.setMap(null);
-      heatmapRef.current = null;
-    }
-  };
-}, [loader, data.rows, showHeatmap]);
-
   useEffect(() => {
     // Wait for DOM to be ready
 
