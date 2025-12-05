@@ -143,14 +143,15 @@ export default function Home() {
 
         data.rows.forEach((card) => {
           if (card.latitude && card.longitude) {
-            const marker = new google.maps.Marker({
-              position: { lat: card.latitude, lng: card.longitude },
-              map,
-              title: card.cardholder_name,
-            });
-            markersRef.current.push(marker);
-            bounds.extend(marker.getPosition());
-          }
+            const marker = new google.maps.AdvancedMarkerElement({
+  position: { lat: card.latitude!, lng: card.longitude! },
+  map,
+  title: card.cardholder_name,
+  content: `
+    <div style="background:white; border-radius:8px; padding:4px; font-size:12px; font-weight:bold; border:1px solid #ccc;">
+      ${card.cardholder_name}
+    </div>
+  `,
         });
 
         if (!bounds.isEmpty()) map.fitBounds(bounds);
