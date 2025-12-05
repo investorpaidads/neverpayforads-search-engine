@@ -119,10 +119,6 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data.rows]);
 
-  useEffect(() => {
-    // Wait for DOM to be ready
-
-    // Initialize map (left intentionally minimal — preserve any existing initialization elsewhere)
 useEffect(() => {
   let map: any;
   let heatmap: any;
@@ -187,6 +183,10 @@ useEffect(() => {
   };
 }, [loader, data.rows, showHeatmap]);
 
+  useEffect(() => {
+    // Wait for DOM to be ready
+
+    // Initialize map (left intentionally minimal — preserve any existing initialization elsewhere)
     // Handle window resize to fix blank screen issue with debouncing
     let resizeTimeout: NodeJS.Timeout | null = null;
 
