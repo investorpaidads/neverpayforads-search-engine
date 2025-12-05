@@ -1,9 +1,44 @@
 "use client";
-
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader } from "@googlemaps/js-api-loader";
 import { getBankLogo } from "@/lib/bank-logos";
-@@ -43,6 +42,7 @@ export default function Home() {
+declare const google: any;
+
+type Card = {
+  id: number;
+  card_number: string;
+  cardholder_name: string;
+  bank_name: string;
+  bank_logo: string | null;
+  expiry_date: string | null;
+  country_code: string | null;
+  country_name: string | null;
+  state_code: string | null;
+  state_name: string | null;
+  city: string | null;
+  owner_phone: string | null;
+  owner_email: string | null;
+  latitude: number | null;
+  longitude: number | null;
+};
+
+export default function Home() {
+  const [filters, setFilters] = useState({
+    country: "",
+    state: "",
+    cardNumber: "",
+    bankName: "",
+    cardholder: "",
+  });
+  const [data, setData] = useState<{ rows: Card[]; total: number }>({
+    rows: [],
+    total: 0,
+  });
+  const [loading, setLoading] = useState(false);
+  const [options, setOptions] = useState<{ countries: string[]; states: string[] }>({
+    countries: [],
+    states: [],
+  });
   const [offset, setOffset] = useState(0);
   const limit = 100;
   const [showHeatmap, setShowHeatmap] = useState(false);
@@ -11,7 +46,12 @@ import { getBankLogo } from "@/lib/bank-logos";
   const mapRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
   const heatmapRef = useRef<any>(null);
-@@ -55,7 +55,7 @@ export default function Home() {
+  const logoLoadingRef = useRef<Set<string>>(new Set());
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [bankLogos, setBankLogos] = useState<Record<string, string | null>>({});
+
+  const loader = useMemo(
+    () =>
       new Loader({
         apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
         version: "weekly",
@@ -19,7 +59,12 @@ import { getBankLogo } from "@/lib/bank-logos";
       }),
     []
   );
-@@ -68,7 +68,7 @@ export default function Home() {
+
+  const queryString = useMemo(() => {
+    const p = new URLSearchParams();
+    for (const [k, v] of Object.entries(filters)) if (v) p.set(k, v);
+    p.set("limit", String(limit));
+    p.set("offset", String(offset));
     return p.toString();
   }, [filters, offset, limit, refreshKey]);
 
@@ -27,7 +72,30 @@ import { getBankLogo } from "@/lib/bank-logos";
   useEffect(() => {
     setLoading(true);
     fetch(`/api/cards?${queryString}`)
-@@ -99,7 +99,8 @@ export default function Home() {
+      .then((r) => r.json())
+      .then((d) => setData(d))
+      .finally(() => setLoading(false));
+  }, [queryString]);
+
+  // Fetch options
+  useEffect(() => {
+    const url = filters.country
+      ? `/api/options?country=${encodeURIComponent(filters.country)}`
+      : "/api/options";
+    fetch(url)
+      .then((r) => r.json())
+      .then((d) => setOptions(d))
+      .catch(() => {});
+  }, [filters.country]);
+
+  // Load bank logos
+  useEffect(() => {
+    const loadLogos = async () => {
+      const logosToLoad: Array<{ bankName: string; cardId: number }> = [];
+      data.rows.forEach((card) => {
+        const key = `${card.id}-${card.bank_name}`;
+        if (!card.bank_logo && !bankLogos[key] && !logoLoadingRef.current.has(key)) {
+          logosToLoad.push({ bankName: card.bank_name, cardId: card.id });
           logoLoadingRef.current.add(key);
         }
       });
@@ -36,7 +104,20 @@ import { getBankLogo } from "@/lib/bank-logos";
       const batchSize = 10;
       for (let i = 0; i < logosToLoad.length; i += batchSize) {
         const batch = logosToLoad.slice(i, i + batchSize);
-@@ -120,69 +121,69 @@ export default function Home() {
+        await Promise.all(
+          batch.map(async ({ bankName, cardId }) => {
+            try {
+              const logo = await getBankLogo(bankName, null);
+              const key = `${cardId}-${bankName}`;
+              setBankLogos((prev) => (prev[key] ? prev : { ...prev, [key]: logo }));
+            } catch {
+              const key = `${cardId}-${bankName}`;
+              setBankLogos((prev) => (prev[key] ? prev : { ...prev, [key]: null }));
+            }
+          })
+        );
+      }
+    };
     loadLogos();
   }, [data.rows]);
 
@@ -66,10 +147,6 @@ import { getBankLogo } from "@/lib/bank-logos";
               position: { lat: card.latitude, lng: card.longitude },
               map,
               title: card.cardholder_name,
-
-
-
-
             });
             markersRef.current.push(marker);
             bounds.extend(marker.getPosition());
@@ -78,7 +155,6 @@ import { getBankLogo } from "@/lib/bank-logos";
 
         if (!bounds.isEmpty()) map.fitBounds(bounds);
 
-
         // Heatmap
         if (showHeatmap) {
           heatmap = new google.maps.visualization.HeatmapLayer({
@@ -86,7 +162,6 @@ import { getBankLogo } from "@/lib/bank-logos";
               .filter((c) => c.latitude && c.longitude)
               .map((c) => new google.maps.LatLng(c.latitude!, c.longitude!)),
             map,
-
           });
           heatmapRef.current = heatmap;
         }
@@ -101,12 +176,8 @@ import { getBankLogo } from "@/lib/bank-logos";
       markersRef.current.forEach((m) => m.setMap(null));
       markersRef.current = [];
       if (heatmapRef.current) heatmapRef.current.setMap(null);
-
     };
   }, [loader, data.rows, showHeatmap]);
-
-
-
 
   const getCardLogo = (card: Card) => {
     const key = `${card.id}-${card.bank_name}`;
@@ -116,7 +187,26 @@ import { getBankLogo } from "@/lib/bank-logos";
   const onExportCsv = () => {
     const headers = [
       "bank_name",
-@@ -209,140 +210,167 @@ export default function Home() {
+      "card_number",
+      "cardholder_name",
+      "country_name",
+      "state_name",
+      "city",
+      "expiry_date",
+      "owner_email",
+      "owner_phone",
+    ];
+    const lines = [headers.join(",")].concat(
+      data.rows.map((r) => headers.map((h) => JSON.stringify((r as any)[h] ?? "")).join(","))
+    );
+    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "cards.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
 
@@ -147,37 +237,6 @@ import { getBankLogo } from "@/lib/bank-logos";
                 ))}
               </select>
             </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
             {/* State */}
             <div>
@@ -232,11 +291,6 @@ import { getBankLogo } from "@/lib/bank-logos";
               />
             </div>
 
-
-
-
-
-
             <button
               className="w-full bg-blue-600 text-white py-2 rounded-md font-semibold mt-2 hover:bg-blue-700 transition-all"
               onClick={() => setRefreshKey((k) => k + 1)}
@@ -287,18 +341,6 @@ import { getBankLogo } from "@/lib/bank-logos";
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Location</th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Expiry</th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Contact</th>
-
-
-
-
-
-
-
-
-
-
-
-
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -308,10 +350,6 @@ import { getBankLogo } from "@/lib/bank-logos";
                       <div className="flex items-center gap-2">
                         {getCardLogo(r) ? (
                           <img src={getCardLogo(r)!} className="h-10 w-10 rounded-lg object-contain" alt={r.bank_name} />
-
-
-
-
                         ) : (
                           <div className="h-10 w-10 rounded-lg bg-gray-300 flex items-center justify-center">
                             {r.bank_name?.charAt(0) || "B"}
@@ -333,8 +371,14 @@ import { getBankLogo } from "@/lib/bank-logos";
                     <td className="px-6 py-4">
                       {r.owner_email && <div>📧 {r.owner_email}</div>}
                       {r.owner_phone && <div>📱 {r.owner_phone}</div>}
-
-
                     </td>
                   </tr>
                 ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
