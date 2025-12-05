@@ -141,14 +141,22 @@ export default function Home() {
 
         const bounds = new google.maps.LatLngBounds();
 const markerIcon = {
-  url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(`
-    <svg width="36" height="36" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="24" cy="24" r="20" fill="#2563EB" stroke="white" stroke-width="3"/>
-      <circle cx="24" cy="24" r="8" fill="white"/>
-    </svg>
-  `),
-  scaledSize: new google.maps.Size(40, 40),
-  anchor: new google.maps.Point(20, 40)
+  url:
+    "data:image/svg+xml;charset=UTF-8," +
+    encodeURIComponent(`
+      <svg width="48" height="64" viewBox="0 0 48 64" xmlns="http://www.w3.org/2000/svg">
+        <!-- Glow under marker -->
+        <ellipse cx="24" cy="58" rx="14" ry="6" fill="rgba(0,0,0,0.25)" />
+
+        <!-- Original Google-style marker body -->
+        <path d="M24 0C14 0 6 8 6 18c0 12 18 36 18 36s18-24 18-36C42 8 34 0 24 0z" fill="#EA4335"/>
+        
+        <!-- Inner circle -->
+        <circle cx="24" cy="18" r="7" fill="white"/>
+      </svg>
+    `),
+  scaledSize: new google.maps.Size(40, 54),
+  anchor: new google.maps.Point(20, 54),
 };
         data.rows.forEach((card) => {
           if (card.latitude && card.longitude) {
