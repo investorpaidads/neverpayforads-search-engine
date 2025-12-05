@@ -35,35 +35,7 @@ export default function Home() {
     total: 0,
   });
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const normalIcon = {
-  url:
-    "data:image/svg+xml;charset=UTF-8," +
-    encodeURIComponent(`
-      <svg width="48" height="64" viewBox="0 0 48 64">
-        <ellipse cx="24" cy="58" rx="14" ry="6" fill="rgba(0,0,0,0.25)" />
-        <path d="M24 0C14 0 6 8 6 18c0 12 18 36 18 36s18-24 18-36C42 8 34 0 24 0z"
-              fill="#EA4335"/>
-        <circle cx="24" cy="18" r="7" fill="white"/>
-      </svg>
-    `),
-  scaledSize: new google.maps.Size(40, 54),
-  anchor: new google.maps.Point(20, 54),
-};
 
-const highlightIcon = {
-  url:
-    "data:image/svg+xml;charset=UTF-8," +
-    encodeURIComponent(`
-      <svg width="48" height="64" viewBox="0 0 48 64">
-        <ellipse cx="24" cy="58" rx="16" ry="8" fill="rgba(255,215,0,0.5)" />
-        <path d="M24 0C14 0 6 8 6 18c0 12 18 36 18 36s18-24 18-36C42 8 34 0 24 0z"
-              fill="#FFD700"/>
-        <circle cx="24" cy="18" r="7" fill="white"/>
-      </svg>
-    `),
-  scaledSize: new google.maps.Size(46, 60),
-  anchor: new google.maps.Point(23, 60),
-};
 
 const handleRowClick = (card: Card) => {
   if (!mapRef.current || !card.latitude || !card.longitude) return;
@@ -175,7 +147,35 @@ const handleRowClick = (card: Card) => {
     };
     loadLogos();
   }, [data.rows]);
+  const normalIcon = {
+  url:
+    "data:image/svg+xml;charset=UTF-8," +
+    encodeURIComponent(`
+      <svg width="48" height="64" viewBox="0 0 48 64">
+        <ellipse cx="24" cy="58" rx="14" ry="6" fill="rgba(0,0,0,0.25)" />
+        <path d="M24 0C14 0 6 8 6 18c0 12 18 36 18 36s18-24 18-36C42 8 34 0 24 0z"
+              fill="#EA4335"/>
+        <circle cx="24" cy="18" r="7" fill="white"/>
+      </svg>
+    `),
+  scaledSize: new google.maps.Size(40, 54),
+  anchor: new google.maps.Point(20, 54),
+};
 
+const highlightIcon = {
+  url:
+    "data:image/svg+xml;charset=UTF-8," +
+    encodeURIComponent(`
+      <svg width="48" height="64" viewBox="0 0 48 64">
+        <ellipse cx="24" cy="58" rx="16" ry="8" fill="rgba(255,215,0,0.5)" />
+        <path d="M24 0C14 0 6 8 6 18c0 12 18 36 18 36s18-24 18-36C42 8 34 0 24 0z"
+              fill="#FFD700"/>
+        <circle cx="24" cy="18" r="7" fill="white"/>
+      </svg>
+    `),
+  scaledSize: new google.maps.Size(46, 60),
+  anchor: new google.maps.Point(23, 60),
+};
   // Initialize Google Map
   useEffect(() => {
     let map: any;
