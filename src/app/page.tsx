@@ -191,6 +191,13 @@ const highlightIcon = {
   scaledSize: new google.maps.Size(46, 60),
   anchor: new google.maps.Point(23, 60),
 };
+            const marker = new google.maps.Marker({
+  position: { lat: card.latitude, lng: card.longitude },
+  map,
+  icon: card.id === selectedId ? highlightIcon : normalIcon,
+  optimized: false,
+  zIndex: 1000
+});
                 marker.cardId = card.id; // <-- custom property
 markersRef.current.push(marker);
     bounds.extend(pos);
