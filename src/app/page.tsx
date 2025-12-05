@@ -1,4 +1,5 @@
 "use client";
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader } from "@googlemaps/js-api-loader";
 import { getBankLogo } from "@/lib/bank-logos";
@@ -37,17 +38,15 @@ export default function Home() {
     total: 0,
   });
   const [loading, setLoading] = useState(false);
-  const [options, setOptions] = useState<{ countries: string[]; states: string[] }>({
-    countries: [],
-    states: [],
-  });
+  const [options, setOptions] = useState<{ countries: string[]; states: string[] }>({ countries: [], states: [] });
   const [offset, setOffset] = useState(0);
   const limit = 100;
   const [showHeatmap, setShowHeatmap] = useState(false);
+
   const mapRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
-  const clusterRef = useRef<MarkerClusterer | null>(null);
   const heatmapRef = useRef<any>(null);
+  const clusterRef = useRef<any>(null);
   const logoLoadingRef = useRef<Set<string>>(new Set());
   const [refreshKey, setRefreshKey] = useState(0);
   const [bankLogos, setBankLogos] = useState<Record<string, string | null>>({});
@@ -70,7 +69,7 @@ export default function Home() {
     return p.toString();
   }, [filters, offset, limit, refreshKey]);
 
-  // ----------------- Fetch Data -----------------
+  // Fetch filtered cards
   useEffect(() => {
     setLoading(true);
     fetch(`/api/cards?${queryString}`)
@@ -79,6 +78,7 @@ export default function Home() {
       .finally(() => setLoading(false));
   }, [queryString]);
 
+  // Fetch options (countries/states)
   useEffect(() => {
     const url = filters.country ? `/api/options?country=${encodeURIComponent(filters.country)}` : "/api/options";
     fetch(url)
@@ -87,7 +87,7 @@ export default function Home() {
       .catch(() => {});
   }, [filters.country]);
 
-  // ----------------- Load Bank Logos -----------------
+  // Load bank logos
   useEffect(() => {
     const loadLogos = async () => {
       const logosToLoad: Array<{ bankName: string; cardId: number }> = [];
@@ -98,8 +98,8 @@ export default function Home() {
           logoLoadingRef.current.add(key);
         }
       });
-      if (logosToLoad.length === 0) return;
 
+      if (logosToLoad.length === 0) return;
       const batchSize = 10;
       for (let i = 0; i < logosToLoad.length; i += batchSize) {
         const batch = logosToLoad.slice(i, i + batchSize);
@@ -109,7 +109,7 @@ export default function Home() {
               const logo = await getBankLogo(bankName, null);
               const key = `${cardId}-${bankName}`;
               setBankLogos((prev) => (prev[key] ? prev : { ...prev, [key]: logo }));
-            } catch (error) {
+            } catch {
               const key = `${cardId}-${bankName}`;
               setBankLogos((prev) => (prev[key] ? prev : { ...prev, [key]: null }));
             }
@@ -117,26 +117,26 @@ export default function Home() {
         );
       }
     };
+
     loadLogos();
   }, [data.rows]);
 
-  // ----------------- Google Map & Markers -----------------
+  // Google Map initialization and markers
   useEffect(() => {
-    let map: any;
-    let heatmap: any;
-
     const initializeMap = async () => {
       try {
         await loader.load();
         const mapEl = document.getElementById(window.innerWidth >= 1024 ? "map-desktop" : "map-mobile");
         if (!mapEl) return;
 
-        map = new google.maps.Map(mapEl, { center: { lat: 50, lng: 10 }, zoom: 4 });
+        const map = new google.maps.Map(mapEl, { center: { lat: 50, lng: 10 }, zoom: 4 });
         mapRef.current = map;
 
-        // Clear previous markers
+        // Clear previous markers & clusters
         markersRef.current.forEach((m) => m.setMap(null));
         markersRef.current = [];
+        if (clusterRef.current) clusterRef.current.clearMarkers();
+        if (heatmapRef.current) heatmapRef.current.setMap(null);
 
         const bounds = new google.maps.LatLngBounds();
 
@@ -144,32 +144,22 @@ export default function Home() {
           if (card.latitude && card.longitude) {
             const marker = new google.maps.Marker({
               position: { lat: card.latitude, lng: card.longitude },
+              map,
               title: card.cardholder_name,
             });
             markersRef.current.push(marker);
-            bounds.extend(marker.getPosition()!);
+            bounds.extend(marker.getPosition());
           }
         });
 
-        // Clusterer
-        if (markersRef.current.length > 0) {
-          clusterRef.current?.clearMarkers();
-          clusterRef.current = new MarkerClusterer({
-            map,
-            markers: markersRef.current,
-          });
-        }
+        if (!bounds.isEmpty()) map.fitBounds(bounds);
 
-        if (!bounds.isEmpty()) {
-          map.fitBounds(bounds);
-        } else {
-          map.setCenter({ lat: 50, lng: 10 });
-          map.setZoom(4);
-        }
+        // Clusterer
+        clusterRef.current = new MarkerClusterer({ markers: markersRef.current, map });
 
         // Heatmap
         if (showHeatmap) {
-          heatmap = new google.maps.visualization.HeatmapLayer({
+          const heatmap = new google.maps.visualization.HeatmapLayer({
             data: data.rows.filter((c) => c.latitude && c.longitude).map((c) => new google.maps.LatLng(c.latitude!, c.longitude!)),
             map,
           });
@@ -181,47 +171,25 @@ export default function Home() {
     };
 
     setTimeout(initializeMap, 0);
-
-    return () => {
-      markersRef.current.forEach((m) => m.setMap(null));
-      markersRef.current = [];
-      clusterRef.current?.clearMarkers();
-      clusterRef.current = null;
-      if (heatmapRef.current) {
-        heatmapRef.current.setMap(null);
-        heatmapRef.current = null;
-      }
-    };
   }, [loader, data.rows, showHeatmap]);
 
-  // ----------------- Window Resize -----------------
+  // Handle window resize
   useEffect(() => {
-    let resizeTimeout: NodeJS.Timeout | null = null;
     const handleResize = () => {
-      if (resizeTimeout) clearTimeout(resizeTimeout);
-      resizeTimeout = setTimeout(() => {
-        if (mapRef.current && typeof google !== "undefined" && google.maps) {
-          try {
-            const center = mapRef.current.getCenter();
-            if (center) mapRef.current.setCenter(center);
-          } catch {}
-        }
-      }, 150);
+      if (mapRef.current && typeof google !== "undefined" && google.maps) {
+        try {
+          const center = mapRef.current.getCenter();
+          if (center) mapRef.current.setCenter(center);
+        } catch {}
+      }
     };
     window.addEventListener("resize", handleResize);
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      if (resizeTimeout) clearTimeout(resizeTimeout);
-    };
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   const hasNext = offset + limit < data.total;
   const hasPrev = offset > 0;
-
-  const getCardLogo = (card: Card) => {
-    const key = `${card.id}-${card.bank_name}`;
-    return bankLogos[key] || card.bank_logo;
-  };
+  const getCardLogo = (card: Card) => bankLogos[`${card.id}-${card.bank_name}`] || card.bank_logo;
 
   const onExportCsv = () => {
     const headers = [
@@ -249,7 +217,6 @@ export default function Home() {
     URL.revokeObjectURL(url);
   };
 
-  // ----------------- RENDER -----------------
   return (
     <div className="min-h-screen bg-gray-50">
 
@@ -688,7 +655,7 @@ export default function Home() {
         </div>
       </div>
     
-  
+    
     </div>
   );
 }
