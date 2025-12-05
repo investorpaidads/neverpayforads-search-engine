@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader } from "@googlemaps/js-api-loader";
 import { getBankLogo } from "@/lib/bank-logos";
@@ -43,6 +42,7 @@ export default function Home() {
   const [offset, setOffset] = useState(0);
   const limit = 100;
   const [showHeatmap, setShowHeatmap] = useState(false);
+
   const mapRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
   const heatmapRef = useRef<any>(null);
@@ -55,7 +55,7 @@ export default function Home() {
       new Loader({
         apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
         version: "weekly",
-        libraries: ["visualization", "marker"],
+        libraries: ["visualization"],
       }),
     []
   );
@@ -68,7 +68,7 @@ export default function Home() {
     return p.toString();
   }, [filters, offset, limit, refreshKey]);
 
-  // Fetch filtered cards
+  // Fetch cards
   useEffect(() => {
     setLoading(true);
     fetch(`/api/cards?${queryString}`)
@@ -99,7 +99,8 @@ export default function Home() {
           logoLoadingRef.current.add(key);
         }
       });
-      if (logosToLoad.length === 0) return;
+      if (!logosToLoad.length) return;
+
       const batchSize = 10;
       for (let i = 0; i < logosToLoad.length; i += batchSize) {
         const batch = logosToLoad.slice(i, i + batchSize);
@@ -120,46 +121,47 @@ export default function Home() {
     loadLogos();
   }, [data.rows]);
 
-  // Google Map
+  // Initialize Google Map
   useEffect(() => {
     let map: any;
     let heatmap: any;
+
     const initializeMap = async () => {
       try {
         await loader.load();
         const mapEl = document.getElementById(window.innerWidth >= 1024 ? "map-desktop" : "map-mobile");
         if (!mapEl) return;
-        map = new google.maps.Map(mapEl, { center: { lat: 48.8566, lng: 2.3522 }, zoom: 4 }); // Centered in Europe
+
+        map = new google.maps.Map(mapEl, { center: { lat: 0, lng: 0 }, zoom: 2 });
         mapRef.current = map;
 
+        // Clear previous markers
         markersRef.current.forEach((m) => m.setMap(null));
         markersRef.current = [];
+
         const bounds = new google.maps.LatLngBounds();
+
         data.rows.forEach((card) => {
           if (card.latitude && card.longitude) {
             const marker = new google.maps.Marker({
               position: { lat: card.latitude, lng: card.longitude },
               map,
               title: card.cardholder_name,
-              icon: {
-                url: "/marker.svg",
-                scaledSize: new google.maps.Size(32, 32),
-              },
             });
             markersRef.current.push(marker);
-            bounds.extend(marker.getPosition()!);
+            bounds.extend(marker.getPosition());
           }
         });
-        if (!bounds.isEmpty()) map.fitBounds(bounds);
-        else map.setCenter({ lat: 48.8566, lng: 2.3522 });
 
+        if (!bounds.isEmpty()) map.fitBounds(bounds);
+
+        // Heatmap
         if (showHeatmap) {
           heatmap = new google.maps.visualization.HeatmapLayer({
             data: data.rows
               .filter((c) => c.latitude && c.longitude)
               .map((c) => new google.maps.LatLng(c.latitude!, c.longitude!)),
             map,
-            radius: 40,
           });
           heatmapRef.current = heatmap;
         }
@@ -167,22 +169,21 @@ export default function Home() {
         console.error("Google Maps failed to initialize", err);
       }
     };
-    setTimeout(initializeMap, 0);
+
+    initializeMap();
+
     return () => {
       markersRef.current.forEach((m) => m.setMap(null));
       markersRef.current = [];
       if (heatmapRef.current) heatmapRef.current.setMap(null);
-      heatmapRef.current = null;
     };
   }, [loader, data.rows, showHeatmap]);
 
-  // Helpers
-  const hasNext = offset + limit < data.total;
-  const hasPrev = offset > 0;
   const getCardLogo = (card: Card) => {
     const key = `${card.id}-${card.bank_name}`;
     return bankLogos[key] || card.bank_logo;
   };
+
   const onExportCsv = () => {
     const headers = [
       "bank_name",
@@ -209,140 +210,167 @@ export default function Home() {
     URL.revokeObjectURL(url);
   };
 
-  // ----------------- RENDER -----------------
+  const hasNext = offset + limit < data.total;
+  const hasPrev = offset > 0;
+
   return (
-    <div className="min-h-screen bg-gray-100 font-sans text-gray-800">
-      {/* Top Filters */}
-      <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        <h1 className="text-3xl font-extrabold tracking-tight text-gray-900 mb-4">
-          💳 Credit Card Dashboard
-        </h1>
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          <select
-            value={filters.country}
-            onChange={(e) => setFilters({ ...filters, country: e.target.value, state: "" })}
-            className="border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 p-2"
-          >
-            <option value="">All Countries</option>
-            {options.countries.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
-          <select
-            value={filters.state}
-            onChange={(e) => setFilters({ ...filters, state: e.target.value })}
-            className="border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 p-2"
-          >
-            <option value="">All States</option>
-            {options.states.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-          <input
-            type="text"
-            placeholder="Card Number"
-            value={filters.cardNumber}
-            onChange={(e) => setFilters({ ...filters, cardNumber: e.target.value })}
-            className="border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 p-2"
-          />
-          <input
-            type="text"
-            placeholder="Bank Name"
-            value={filters.bankName}
-            onChange={(e) => setFilters({ ...filters, bankName: e.target.value })}
-            className="border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 p-2"
-          />
-          <input
-            type="text"
-            placeholder="Cardholder"
-            value={filters.cardholder}
-            onChange={(e) => setFilters({ ...filters, cardholder: e.target.value })}
-            className="border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 p-2"
-          />
-        </div>
-      </div>
+    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
+      {/* Desktop & Mobile UI */}
+      <div className="lg:flex">
+        {/* Sidebar */}
+        <div className="lg:w-80 bg-white shadow-sm border-r border-gray-200 p-6">
+          <h1 className="text-2xl font-bold mb-6 tracking-tight">Credit Card Database</h1>
+          <div className="space-y-4">
+            {/* Country */}
+            <div>
+              <label className="block text-xs font-semibold mb-2 uppercase tracking-wider">Country</label>
+              <select
+                className="w-full border border-gray-300 rounded-md px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                value={filters.country}
+                onChange={(e) => setFilters({ ...filters, country: e.target.value, state: "" })}
+              >
+                <option value="">All Countries</option>
+                {options?.countries?.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-      {/* Map */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6">
-        <div className="rounded-xl overflow-hidden shadow-lg">
-          <div id="map-desktop" className="w-full h-[500px] rounded-xl" />
-        </div>
-      </div>
+            {/* State */}
+            <div>
+              <label className="block text-xs font-semibold mb-2 uppercase tracking-wider">State</label>
+              <select
+                className="w-full border border-gray-300 rounded-md px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                value={filters.state}
+                onChange={(e) => setFilters({ ...filters, state: e.target.value })}
+              >
+                <option value="">All States</option>
+                {options?.states?.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-      {/* Cards Table */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-10">
-        <div className="bg-white rounded-xl shadow-md overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-            <h2 className="text-xl font-bold text-gray-900">💳 Card Records</h2>
+            {/* Card Number */}
+            <div>
+              <label className="block text-xs font-semibold mb-2 uppercase tracking-wider">Card Number</label>
+              <input
+                type="text"
+                className="w-full border border-gray-300 rounded-md px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="193"
+                value={filters.cardNumber}
+                onChange={(e) => setFilters({ ...filters, cardNumber: e.target.value })}
+              />
+            </div>
+
+            {/* Bank */}
+            <div>
+              <label className="block text-xs font-semibold mb-2 uppercase tracking-wider">Bank</label>
+              <input
+                type="text"
+                className="w-full border border-gray-300 rounded-md px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="CIMB"
+                value={filters.bankName}
+                onChange={(e) => setFilters({ ...filters, bankName: e.target.value })}
+              />
+            </div>
+
+            {/* Cardholder */}
+            <div>
+              <label className="block text-xs font-semibold mb-2 uppercase tracking-wider">Cardholder</label>
+              <input
+                type="text"
+                className="w-full border border-gray-300 rounded-md px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Abdul"
+                value={filters.cardholder}
+                onChange={(e) => setFilters({ ...filters, cardholder: e.target.value })}
+              />
+            </div>
+
             <button
-              className="bg-blue-600 text-white px-4 py-2 rounded-md shadow-sm hover:bg-blue-700 transition"
-              onClick={onExportCsv}
+              className="w-full bg-blue-600 text-white py-2 rounded-md font-semibold mt-2 hover:bg-blue-700 transition-all"
+              onClick={() => setRefreshKey((k) => k + 1)}
             >
-              Export CSV
+              🔄 Refresh
             </button>
           </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1 p-6 space-y-6">
+          {/* Map */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-semibold text-lg">🌍 Geographic Distribution</h2>
+              <div className="flex items-center gap-2">
+                <button
+                  className={`px-3 py-1 text-sm rounded-md ${!showHeatmap ? "bg-blue-500 text-white" : "bg-gray-200"}`}
+                  onClick={() => setShowHeatmap(false)}
+                >
+                  Locations
+                </button>
+                <button
+                  className={`px-3 py-1 text-sm rounded-md ${showHeatmap ? "bg-red-500 text-white" : "bg-gray-200"}`}
+                  onClick={() => setShowHeatmap(true)}
+                >
+                  Density
+                </button>
+                <button
+                  className="px-3 py-1 text-sm rounded-md bg-green-500 text-white"
+                  onClick={onExportCsv}
+                >
+                  📊 Export
+                </button>
+              </div>
+            </div>
+            <div id="map-desktop" className="w-full h-[400px] rounded-md" />
+          </div>
+
+          {/* Cards Table */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-auto">
+            <table className="min-w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Bank
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Card Number
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Cardholder
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Location
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Expiry
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Contact
-                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Bank</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Card Number</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Cardholder</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Location</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Expiry</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Contact</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-100">
+              <tbody className="bg-white divide-y divide-gray-200">
                 {data.rows.map((r) => (
                   <tr key={r.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-3">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
                         {getCardLogo(r) ? (
-                          <img
-                            className="h-10 w-10 rounded-full object-cover border border-gray-200"
-                            src={getCardLogo(r)!}
-                            alt={r.bank_name}
-                          />
+                          <img src={getCardLogo(r)!} className="h-10 w-10 rounded-lg object-contain" alt={r.bank_name} />
                         ) : (
-                          <div className="h-10 w-10 rounded-full bg-blue-200 flex items-center justify-center">
-                            {r.bank_name?.charAt(0)}
+                          <div className="h-10 w-10 rounded-lg bg-gray-300 flex items-center justify-center">
+                            {r.bank_name?.charAt(0) || "B"}
                           </div>
                         )}
-                        <span className="text-sm font-medium">{r.bank_name}</span>
+                        <span>{r.bank_name}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap font-mono">{r.card_number}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{r.cardholder_name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4 font-mono">{r.card_number}</td>
+                    <td className="px-6 py-4">{r.cardholder_name}</td>
+                    <td className="px-6 py-4">
                       {[r.city, r.state_name, r.country_name].filter(Boolean).join(", ")}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">
+                    <td className="px-6 py-4">
+                      <span className="px-2 py-1 text-xs font-bold rounded-full bg-green-100 text-green-800">
                         {r.expiry_date}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex flex-col gap-1">
-                        {r.owner_email && <span>📧 {r.owner_email}</span>}
-                        {r.owner_phone && <span>📱 {r.owner_phone}</span>}
-                      </div>
+                    <td className="px-6 py-4">
+                      {r.owner_email && <div>📧 {r.owner_email}</div>}
+                      {r.owner_phone && <div>📱 {r.owner_phone}</div>}
                     </td>
                   </tr>
                 ))}
