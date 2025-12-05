@@ -147,6 +147,27 @@ const handleRowClick = (card: Card) => {
     };
     loadLogos();
   }, [data.rows]);
+
+  // Initialize Google Map
+  useEffect(() => {
+    let map: any;
+    let heatmap: any;
+
+    const initializeMap = async () => {
+      try {
+        await loader.load();
+        const mapEl = document.getElementById(window.innerWidth >= 1024 ? "map-desktop" : "map-mobile");
+        if (!mapEl) return;
+
+        map = new google.maps.Map(mapEl, { center: { lat: 0, lng: 0 }, zoom: 2 });
+        mapRef.current = map;
+
+        // Clear previous markers
+        markersRef.current.forEach((m) => m.setMap(null));
+        markersRef.current = [];
+
+        const bounds = new google.maps.LatLngBounds();
+
   const normalIcon = {
   url:
     "data:image/svg+xml;charset=UTF-8," +
@@ -176,27 +197,6 @@ const highlightIcon = {
   scaledSize: new google.maps.Size(46, 60),
   anchor: new google.maps.Point(23, 60),
 };
-  // Initialize Google Map
-  useEffect(() => {
-    let map: any;
-    let heatmap: any;
-
-    const initializeMap = async () => {
-      try {
-        await loader.load();
-        const mapEl = document.getElementById(window.innerWidth >= 1024 ? "map-desktop" : "map-mobile");
-        if (!mapEl) return;
-
-        map = new google.maps.Map(mapEl, { center: { lat: 0, lng: 0 }, zoom: 2 });
-        mapRef.current = map;
-
-        // Clear previous markers
-        markersRef.current.forEach((m) => m.setMap(null));
-        markersRef.current = [];
-
-        const bounds = new google.maps.LatLngBounds();
-
-
         data.rows.forEach((card) => {
           if (card.latitude && card.longitude) {
             const pos = { lat: card.latitude, lng: card.longitude };
