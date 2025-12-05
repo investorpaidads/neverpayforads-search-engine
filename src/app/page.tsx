@@ -148,6 +148,10 @@ export default function Home() {
               map,
               title: card.cardholder_name,
             });
+            marker.addListener("click", () => {
+  marker.setAnimation(google.maps.Animation.BOUNCE);
+  setTimeout(() => marker.setAnimation(null), 1400); // stop bounce
+});
             markersRef.current.push(marker);
             bounds.extend(marker.getPosition());
           }
