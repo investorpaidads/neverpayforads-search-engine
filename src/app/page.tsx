@@ -167,8 +167,10 @@ const markerIcon = {
               icon: markerIcon,
                 optimized: false, // <-- important
               mapPaneName: "overlayMouseTarget",
-  zIndex: google.maps.Marker.MAX_ZINDEX + 1
+  zIndex: 1000
             });
+                markersRef.current.push(marker);
+    bounds.extend(pos);
             marker.addListener("click", () => {
   marker.setAnimation(google.maps.Animation.BOUNCE);
   setTimeout(() => marker.setAnimation(null), 1400); // stop bounce
