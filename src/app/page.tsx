@@ -168,36 +168,46 @@ normalIconRef.current = {
   url:
     "data:image/svg+xml;charset=UTF-8," +
     encodeURIComponent(`
-<svg xmlns="http://www.w3.org/2000/svg" width="40" height="54" viewBox="0 0 40 54">
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="60" viewBox="0 0 48 60">
   <defs>
-    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.3"/>
+    <linearGradient id="gradNormal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#4a90e2"/>
+      <stop offset="100%" stop-color="#357ABD"/>
+    </linearGradient>
+    <filter id="shadowNormal" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.2"/>
     </filter>
   </defs>
-  <path fill="#007bff" stroke="#fff" stroke-width="3" filter="url(#shadow)"
-        d="M20 0C12 0 0 20 0 34s8 20 20 20 20-8 20-20S28 0 20 0z"/>
+  <path d="M24 0c-13 0-24 22-24 36 0 8 6 12 12 12s12-6 12-6 12 6 12 6 12-4 12-12C48 22 37 0 24 0z" 
+        fill="url(#gradNormal)" filter="url(#shadowNormal)"/>
+  <circle cx="24" cy="24" r="10" fill="white"/>
 </svg>
 `),
-  scaledSize: new google.maps.Size(40, 54),
-  anchor: new google.maps.Point(20, 54),
+  scaledSize: new google.maps.Size(48, 60),
+  anchor: new google.maps.Point(24, 60),
 };
 
 highlightIconRef.current = {
   url:
     "data:image/svg+xml;charset=UTF-8," +
     encodeURIComponent(`
-<svg xmlns="http://www.w3.org/2000/svg" width="46" height="60" viewBox="0 0 46 60">
+<svg xmlns="http://www.w3.org/2000/svg" width="52" height="66" viewBox="0 0 52 66">
   <defs>
-    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-      <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#000" flood-opacity="0.4"/>
+    <linearGradient id="gradHighlight" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FF6B6B"/>
+      <stop offset="100%" stop-color="#FF3B3B"/>
+    </linearGradient>
+    <filter id="shadowHighlight" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#000" flood-opacity="0.25"/>
     </filter>
   </defs>
-  <path fill="#ff4d4f" stroke="#fff" stroke-width="3" filter="url(#shadow)"
-        d="M23 0C14 0 0 23 0 39s9 21 23 21 23-9 23-21S32 0 23 0z"/>
+  <path d="M26 0c-14 0-26 24-26 40 0 9 7 14 13 14s13-7 13-7 13 7 13 7 13-5 13-14C52 24 40 0 26 0z" 
+        fill="url(#gradHighlight)" filter="url(#shadowHighlight)"/>
+  <circle cx="26" cy="28" r="12" fill="white"/>
 </svg>
 `),
-  scaledSize: new google.maps.Size(46, 60),
-  anchor: new google.maps.Point(23, 60),
+  scaledSize: new google.maps.Size(52, 66),
+  anchor: new google.maps.Point(26, 66),
 };
         // Clear previous markers
         markersRef.current.forEach((m) => m.setMap(null));
