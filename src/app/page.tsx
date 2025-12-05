@@ -192,7 +192,7 @@ const handleRowClick = (card: Card) => {
               position: { lat: card.latitude, lng: card.longitude },
               map:mapRef.current,
               title: card.cardholder_name,
-              icon:card.id === selectedId ? highlightIcon : normalIcon,
+              icon:card.id === selectedId ?  highlightIconRef.current : normalIconRef.current,
                 optimized: false, // <-- important
               mapPaneName: "overlayMouseTarget",
               zIndex: isSelected ? 2000 : 1000,
@@ -245,10 +245,10 @@ const handleRowClick = (card: Card) => {
 useEffect(() => {
   markersRef.current.forEach((marker) => {
     if (marker.cardId === selectedId) {
-      marker.setIcon(highlightIcon);
+      marker.setIcon(highlightIconRef.current);
       marker.setZIndex(2000);
     } else {
-      marker.setIcon(normalIcon);
+      marker.setIcon(normalIconRef.current);
       marker.setZIndex(1000);
     }
   });
