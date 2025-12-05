@@ -140,7 +140,16 @@ export default function Home() {
         markersRef.current = [];
 
         const bounds = new google.maps.LatLngBounds();
-
+const markerIcon = {
+  url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(`
+    <svg width="36" height="36" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="24" cy="24" r="20" fill="#2563EB" stroke="white" stroke-width="3"/>
+      <circle cx="24" cy="24" r="8" fill="white"/>
+    </svg>
+  `),
+  scaledSize: new google.maps.Size(40, 40),
+  anchor: new google.maps.Point(20, 40)
+};
         data.rows.forEach((card) => {
           if (card.latitude && card.longitude) {
             const marker = new google.maps.Marker({
