@@ -160,6 +160,7 @@ const markerIcon = {
 };
         data.rows.forEach((card) => {
           if (card.latitude && card.longitude) {
+            const pos = { lat: card.latitude, lng: card.longitude };
             const marker = new google.maps.Marker({
               position: { lat: card.latitude, lng: card.longitude },
               map,
