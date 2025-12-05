@@ -163,30 +163,31 @@ const handleRowClick = (card: Card) => {
 
         map = new google.maps.Map(mapEl, { center: { lat: 0, lng: 0 }, zoom: 2 });
         mapRef.current = map;
+    // --- Initialize icon refs ---
+    normalIconRef.current = {
+      url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(`
+        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="54" viewBox="0 0 40 54">
+          <path fill="#007bff" d="M20 0C12 0 0 20 0 34s8 20 20 20 20-8 20-20S28 0 20 0z"/>
+        </svg>
+      `),
+      scaledSize: new google.maps.Size(40, 54),
+      anchor: new google.maps.Point(20, 54),
+    };
 
+    highlightIconRef.current = {
+      url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(`
+        <svg xmlns="http://www.w3.org/2000/svg" width="46" height="60" viewBox="0 0 46 60">
+          <path fill="#ff0000" d="M23 0C14 0 0 23 0 39s9 21 23 21 23-9 23-21S32 0 23 0z"/>
+        </svg>
+      `),
+      scaledSize: new google.maps.Size(46, 60),
+      anchor: new google.maps.Point(23, 60),
+    };
         // Clear previous markers
         markersRef.current.forEach((m) => m.setMap(null));
         markersRef.current = [];
     // Icons must be created here because google.maps exists
-      const normalIcon = {
-        url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(`
-    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="54" viewBox="0 0 40 54">
-      <path fill="#007bff" d="M20 0C12 0 0 20 0 34s8 20 20 20 20-8 20-20S28 0 20 0z"/>
-    </svg>
-  `),
-        scaledSize: new google.maps.Size(40, 54),
-        anchor: new google.maps.Point(20, 54),
-      };
 
-    const highlightIcon = {
-      url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(`
-    <svg xmlns="http://www.w3.org/2000/svg" width="46" height="60" viewBox="0 0 46 60">
-      <path fill="#ff0000" d="M23 0C14 0 0 23 0 39s9 21 23 21 23-9 23-21S32 0 23 0z"/>
-    </svg>
-  `),
-      scaledSize: new google.maps.Size(46, 60),
-      anchor: new google.maps.Point(23, 60),
-    };
         const bounds = new google.maps.LatLngBounds();
 
 
