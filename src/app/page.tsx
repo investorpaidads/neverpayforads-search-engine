@@ -39,6 +39,15 @@ export default function Home() {
   const [bankLogos, setBankLogos] = useState<Record<string, string | null>>({});
   const logoLoadingRef = useRef<Set<string>>(new Set());
   const canvasResizeObserverRef = useRef<ResizeObserver | null>(null);
+  const loader = useMemo(
+    () =>
+      new Loader({
+        apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
+        version: "weekly",
+        libraries: ["visualization", "marker"],
+      }),
+    []
+  );
 
   const queryString = useMemo(() => {
     const p = new URLSearchParams();
@@ -114,7 +123,61 @@ export default function Home() {
     // Wait for DOM to be ready
 
     // Initialize map (left intentionally minimal — preserve any existing initialization elsewhere)
+useEffect(() => {
+  let map: any;
+  let heatmap: any;
+  const initMap = async () => {
+    await loader.load();
 
+    // Decide which element to use based on viewport
+    const mapEl = document.getElementById(window.innerWidth >= 1024 ? 'map-desktop' : 'map-mobile');
+    if (!mapEl) return;
+
+    map = new google.maps.Map(mapEl, {
+      center: { lat: 0, lng: 0 },
+      zoom: 2,
+    });
+    mapRef.current = map;
+
+    // Add markers
+    markersRef.current.forEach((m) => m.setMap(null)); // clear old
+    markersRef.current = [];
+
+    data.rows.forEach((card) => {
+      if (card.latitude && card.longitude) {
+        const marker = new google.maps.Marker({
+          position: { lat: card.latitude, lng: card.longitude },
+          map,
+          title: card.cardholder_name,
+        });
+        markersRef.current.push(marker);
+      }
+    });
+
+    // Add heatmap
+    if (showHeatmap) {
+      heatmap = new google.maps.visualization.HeatmapLayer({
+        data: data.rows
+          .filter(c => c.latitude && c.longitude)
+          .map(c => new google.maps.LatLng(c.latitude!, c.longitude!)),
+        map,
+      });
+      heatmapRef.current = heatmap;
+    }
+  };
+
+  initMap();
+
+  return () => {
+    // Cleanup markers & heatmap
+    markersRef.current.forEach((m) => m.setMap(null));
+    markersRef.current = [];
+    if (heatmapRef.current) {
+      heatmapRef.current.setMap(null);
+      heatmapRef.current = null;
+    }
+  };
+}, [loader, data.rows, showHeatmap]);
     // Handle window resize to fix blank screen issue with debouncing
     let resizeTimeout: NodeJS.Timeout | null = null;
 
