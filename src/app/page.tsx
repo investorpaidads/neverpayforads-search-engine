@@ -164,7 +164,9 @@ const markerIcon = {
               position: { lat: card.latitude, lng: card.longitude },
               map,
               title: card.cardholder_name,
-              icon: markerIcon
+              icon: markerIcon,
+                optimized: false, // <-- important
+  zIndex: google.maps.Marker.MAX_ZINDEX + 1
             });
             marker.addListener("click", () => {
   marker.setAnimation(google.maps.Animation.BOUNCE);
