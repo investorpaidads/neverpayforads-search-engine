@@ -327,7 +327,7 @@ useEffect(() => {
       {/* Desktop & Mobile UI */}
       <div className="lg:flex">
         {/* Sidebar */}
-        <div className="lg:w-80 bg-white shadow-sm border-r border-gray-200 p-6">
+        <div className="lg:w-80 bg-white shadow-sm border-r border-gray-200 p-6 sticky top-0 h-screen overflow-auto">
           <h1 className="text-2xl font-bold mb-6 tracking-tight">Credit Card Database</h1>
           <div className="space-y-4">
             {/* Country */}
