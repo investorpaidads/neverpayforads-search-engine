@@ -412,32 +412,33 @@ useEffect(() => {
         {/* Main Content */}
         <div className="flex-1 p-6 space-y-6">
           {/* Map */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-semibold text-lg">🌍 Geographic Distribution</h2>
-              <div className="flex items-center gap-2">
-                <button
-                  className={`px-3 py-1 text-sm rounded-md ${!showHeatmap ? "bg-blue-500 text-white" : "bg-gray-200"}`}
-                  onClick={() => setShowHeatmap(false)}
-                >
-                  Locations
-                </button>
-                <button
-                  className={`px-3 py-1 text-sm rounded-md ${showHeatmap ? "bg-red-500 text-white" : "bg-gray-200"}`}
-                  onClick={() => setShowHeatmap(true)}
-                >
-                  Density
-                </button>
-                <button
-                  className="px-3 py-1 text-sm rounded-md bg-green-500 text-white"
-                  onClick={onExportCsv}
-                >
-                  📊 Export
-                </button>
-              </div>
-            </div>
-            <div id="map-desktop" className="w-full h-[400px] rounded-md" />
-          </div>
+<div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sticky top-0 z-50">
+  <div className="flex items-center justify-between mb-3">
+    <h2 className="font-semibold text-lg">🌍 Geographic Distribution</h2>
+    <div className="flex items-center gap-2">
+      <button
+        className={`px-3 py-1 text-sm rounded-md ${!showHeatmap ? "bg-blue-500 text-white" : "bg-gray-200"}`}
+        onClick={() => setShowHeatmap(false)}
+      >
+        Locations
+      </button>
+      <button
+        className={`px-3 py-1 text-sm rounded-md ${showHeatmap ? "bg-red-500 text-white" : "bg-gray-200"}`}
+        onClick={() => setShowHeatmap(true)}
+      >
+        Density
+      </button>
+      <button
+        className="px-3 py-1 text-sm rounded-md bg-green-500 text-white"
+        onClick={onExportCsv}
+      >
+        📊 Export
+      </button>
+    </div>
+  </div>
+  <div id="map-desktop" className="w-full h-[400px] rounded-md" />
+</div>
+
 
           {/* Cards Table */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-auto">
