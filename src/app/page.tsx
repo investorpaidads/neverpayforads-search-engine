@@ -168,11 +168,11 @@ const handleRowClick = (card: Card) => {
         markersRef.current.forEach((m) => m.setMap(null));
         markersRef.current = [];
     // Icons must be created here because google.maps exists
-    const normalIcon = {
-      url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(`<svg>...</svg>`),
-      scaledSize: new google.maps.Size(40, 54),
-      anchor: new google.maps.Point(20, 54),
-    };
+      const normalIcon = {
+        url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(`<svg>...</svg>`),
+        scaledSize: new google.maps.Size(40, 54),
+        anchor: new google.maps.Point(20, 54),
+      };
 
     const highlightIcon = {
       url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(`<svg>...</svg>`),
@@ -186,23 +186,26 @@ const handleRowClick = (card: Card) => {
 
         data.rows.forEach((card) => {
           if (card.latitude && card.longitude) {
+            const isSelected = card.id === selectedId;
             const pos = { lat: card.latitude, lng: card.longitude };
             const marker = new google.maps.Marker({
               position: { lat: card.latitude, lng: card.longitude },
-              map,
+              map:mapRef.current,
               title: card.cardholder_name,
               icon:card.id === selectedId ? highlightIcon : normalIcon,
                 optimized: false, // <-- important
               mapPaneName: "overlayMouseTarget",
-  zIndex: 1000
+              zIndex: isSelected ? 2000 : 1000,
             });
                 markersRef.current.push(marker);
-    bounds.extend(pos);
+            bounds.extend(pos);
+            marker.cardId = card.id;
             marker.addListener("click", () => {
   marker.setAnimation(google.maps.Animation.BOUNCE);
+              setSelectedId(card.id);
   setTimeout(() => marker.setAnimation(null), 1400); // stop bounce
-});
-            marker.cardId = card.id;
+        });
+            
             markersRef.current.push(marker);
             bounds.extend(marker.getPosition());
           }
@@ -238,7 +241,18 @@ const handleRowClick = (card: Card) => {
     const key = `${card.id}-${card.bank_name}`;
     return bankLogos[key] || card.bank_logo;
   };
-
+// Update marker icons when selectedId changes
+useEffect(() => {
+  markersRef.current.forEach((marker) => {
+    if (marker.cardId === selectedId) {
+      marker.setIcon(highlightIcon);
+      marker.setZIndex(2000);
+    } else {
+      marker.setIcon(normalIcon);
+      marker.setZIndex(1000);
+    }
+  });
+}, [selectedId]);
   const onExportCsv = () => {
     const headers = [
       "bank_name",
