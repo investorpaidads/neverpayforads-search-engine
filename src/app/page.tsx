@@ -166,6 +166,7 @@ const markerIcon = {
               title: card.cardholder_name,
               icon: markerIcon,
                 optimized: false, // <-- important
+              mapPaneName: "overlayMouseTarget",
   zIndex: google.maps.Marker.MAX_ZINDEX + 1
             });
             marker.addListener("click", () => {
