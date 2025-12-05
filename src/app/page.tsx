@@ -46,13 +46,13 @@ const handleRowClick = (card: Card) => {
   // 1. Move map to marker center
   mapRef.current.panTo(pos);
   mapRef.current.setZoom(12);
-
+setSelectedId((prev) => (prev === card.id ? null : card.id));
   // 2. Update selected marker
-  setSelectedId(card.id);
+  //setSelectedId(card.id);
 
   // 3. Change marker icon immediately
   markersRef.current.forEach((m) => {
-    if (m.cardId === card.id) {
+    if (m.cardId === (selectedId === card.id ? null : card.id)) {
       m.setIcon(highlightIconRef.current);
       m.setZIndex(2000);
     } else {
@@ -455,7 +455,13 @@ useEffect(() => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {data.rows.map((r) => (
-                  <tr key={r.id} onClick={() => handleRowClick(r)} className="hover:bg-gray-50 transition-colors cursor-pointer">
+                  <tr
+  key={r.id}
+  onClick={() => handleRowClick(r)}
+  className={`transition-colors cursor-pointer ${
+    r.id === selectedId ? "bg-blue-100" : "hover:bg-gray-50"
+  }`}
+>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         {getCardLogo(r) ? (
