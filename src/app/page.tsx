@@ -156,6 +156,7 @@ const markerIcon = {
               position: { lat: card.latitude, lng: card.longitude },
               map,
               title: card.cardholder_name,
+              icon: markerIcon
             });
             marker.addListener("click", () => {
   marker.setAnimation(google.maps.Animation.BOUNCE);
