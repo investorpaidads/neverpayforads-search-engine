@@ -34,6 +34,7 @@ export default function Home() {
     rows: [],
     total: 0,
   });
+  const [selectedId, setSelectedId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [options, setOptions] = useState<{ countries: string[]; states: string[] }>({
     countries: [],
@@ -161,16 +162,37 @@ const markerIcon = {
         data.rows.forEach((card) => {
           if (card.latitude && card.longitude) {
             const pos = { lat: card.latitude, lng: card.longitude };
-            const marker = new google.maps.Marker({
-              position: { lat: card.latitude, lng: card.longitude },
-              map,
-              title: card.cardholder_name,
-              icon: markerIcon,
-                optimized: false, // <-- important
-              mapPaneName: "overlayMouseTarget",
-  zIndex: 1000
-            });
-                markersRef.current.push(marker);
+const normalIcon = {
+  url:
+    "data:image/svg+xml;charset=UTF-8," +
+    encodeURIComponent(`
+      <svg width="48" height="64" viewBox="0 0 48 64">
+        <ellipse cx="24" cy="58" rx="14" ry="6" fill="rgba(0,0,0,0.25)" />
+        <path d="M24 0C14 0 6 8 6 18c0 12 18 36 18 36s18-24 18-36C42 8 34 0 24 0z"
+              fill="#EA4335"/>
+        <circle cx="24" cy="18" r="7" fill="white"/>
+      </svg>
+    `),
+  scaledSize: new google.maps.Size(40, 54),
+  anchor: new google.maps.Point(20, 54),
+};
+
+const highlightIcon = {
+  url:
+    "data:image/svg+xml;charset=UTF-8," +
+    encodeURIComponent(`
+      <svg width="48" height="64" viewBox="0 0 48 64">
+        <ellipse cx="24" cy="58" rx="16" ry="8" fill="rgba(255,215,0,0.5)" />
+        <path d="M24 0C14 0 6 8 6 18c0 12 18 36 18 36s18-24 18-36C42 8 34 0 24 0z"
+              fill="#FFD700"/>  <!-- Gold -->
+        <circle cx="24" cy="18" r="7" fill="white"/>
+      </svg>
+    `),
+  scaledSize: new google.maps.Size(46, 60),
+  anchor: new google.maps.Point(23, 60),
+};
+                marker.cardId = card.id; // <-- custom property
+markersRef.current.push(marker);
     bounds.extend(pos);
             marker.addListener("click", () => {
   marker.setAnimation(google.maps.Animation.BOUNCE);
@@ -373,7 +395,33 @@ const markerIcon = {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {data.rows.map((r) => (
-                  <tr key={r.id} className="hover:bg-gray-50 transition-colors">
+                  <tr
+  key={r.id}
+  const handleRowClick = (card: Card) => {
+  if (!mapRef.current || !card.latitude || !card.longitude) return;
+
+  const pos = { lat: card.latitude, lng: card.longitude };
+
+  // 1. Move map to marker center
+  mapRef.current.panTo(pos);
+  mapRef.current.setZoom(12);
+
+  // 2. Update selected marker
+  setSelectedId(card.id);
+
+  // 3. Change marker icon immediately
+  markersRef.current.forEach((m) => {
+    if (m.cardId === card.id) {
+      m.setIcon(highlightIcon);
+      m.setZIndex(2000);
+    } else {
+      m.setIcon(normalIcon);
+      m.setZIndex(1000);
+    }
+  });
+};
+  className="hover:bg-gray-50 transition-colors cursor-pointer"
+>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         {getCardLogo(r) ? (
