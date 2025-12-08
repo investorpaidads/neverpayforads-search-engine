@@ -19,10 +19,16 @@ export async function GET(req: NextRequest) {
     console.log('[API] Found', states.length, 'states');
     return new Response(JSON.stringify({ countries, states }), { headers: { 'content-type': 'application/json' } });
   } catch (error) {
-    console.error('[API] Options route error:', error);
-    return new Response(JSON.stringify({ error: 'Internal server error', details: error.message }), { 
-      status: 500, 
-      headers: { 'content-type': 'application/json' } 
+  console.error('[API] Options route error:', error);
+
+  const errorMessage =
+    error instanceof Error ? error.message : 'Unknown error';
+
+  return new Response(
+    JSON.stringify({ error: 'Internal server error', details: errorMessage }),
+    {
+      status: 500,
+      headers: { 'content-type': 'application/json' },
     });
   }
 }
