@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader } from "@googlemaps/js-api-loader";
-import { getBankLogoByCardNumber } from "@/lib/bank-logos";
+import { getBankLogo } from '@/lib/bank-logos';
 declare const google: any;
 
 type Card = {
@@ -21,27 +21,7 @@ type Card = {
   latitude: number | null;
   longitude: number | null;
 };
-async function fetchLogo(cardNumber: string) {
-  const res = await fetch(`/api/bank-logo?card=${cardNumber}`);
-  const data = await res.json();
-  //console.log("const dataresn:"+res);
-  //console.log("const datajson:"+data);
-  return data.logo;
-}
 
-function makeFallbackLogo(name: string): string {
-  const initials = name
-    .split(/\s+/)
-    .map(w => w[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-  const colors = ["#3b82f6","#10b981","#f59e0b","#ef4444","#8b5cf6","#06b6d4","#ec4899","#14b8a6"];
-  const color = colors[name.charCodeAt(0) % colors.length];
-  const svg = `<svg width="96" height="96" xmlns="http://www.w3.org/2000/svg"><rect width="96" height="96" rx="12" fill="${color}" /><text x="48" y="54" text-anchor="middle" font-family="Arial" font-size="34" font-weight="bold" fill="white">${initials}</text></svg>`;
-  return `data:image/svg+xml;base64,${typeof btoa === "function" ? btoa(svg) : Buffer.from(svg).toString("base64")}`;
-}
 
 export default function Home() {
   const [filters, setFilters] = useState({
@@ -139,46 +119,46 @@ export default function Home() {
   }, [filters.country]);
 
   // Load bank logos
-useEffect(() => {
-  const loadLogos = async () => {
-    const logosToLoad: Array<{ cardNumber: string; cardId: number }> = [];
+  useEffect(() => {
+    const loadLogos = async () => {
+      const logosToLoad: Array<{ bankName: string; cardId: number }> = [];
+      data.rows.forEach((card) => {
+        const key = `${card.id}-${card.bank_name}`;
+        if (!card.bank_logo && !bankLogos[key] && !logoLoadingRef.current.has(key)) {
+          logosToLoad.push({ bankName: card.bank_name, cardId: card.id });
+          logoLoadingRef.current.add(key);
+        }
+      });
 
-    data.rows.forEach((card) => {
-      const key = `${card.id}-${card.card_number}`;
-      if (!bankLogos[key] && !logoLoadingRef.current.has(key)) {
-        logosToLoad.push({ cardNumber: card.card_number, cardId: card.id });
-        logoLoadingRef.current.add(key);
+      if (logosToLoad.length === 0) return;
+      const batchSize = 10;
+      for (let i = 0; i < logosToLoad.length; i += batchSize) {
+        const batch = logosToLoad.slice(i, i + batchSize);
+        await Promise.all(
+          batch.map(async ({ bankName, cardId }) => {
+            try {
+              const logo = await getBankLogo(bankName, null);
+              const key = `${cardId}-${bankName}`;
+              setBankLogos((prev) => {
+                // Only update if not already set
+                if (prev[key]) return prev;
+                return { ...prev, [key]: logo };
+              });
+            } catch (error) {
+              console.error(`Failed to load logo for ${bankName}:`, error);
+              const key = `${cardId}-${bankName}`;
+              setBankLogos((prev) => {
+                if (prev[key]) return prev;
+                return { ...prev, [key]: null };
+              });
+            }
+          })
+        );
       }
-    });
+    };
 
-    if (!logosToLoad.length) return;
-
-    const batchSize = 10;
-
-    for (let i = 0; i < logosToLoad.length; i += batchSize) {
-      const batch = logosToLoad.slice(i, i + batchSize);
-
-      await Promise.all(
-        batch.map(async ({ cardNumber, cardId }) => {
-          const key = `${cardId}-${cardNumber}`;
-
-          try {
-const logo = await getBankLogoByCardNumber(cardNumber);
-setBankLogos(prev => ({ ...prev, [key]: logo || makeFallbackLogo("Unknown") }));
-          } catch (err) {
-           // console.error("Failed to fetch logo for", cardNumber, err);
-            setBankLogos(prev => ({
-              ...prev,
-              [key]: makeFallbackLogo("Unknown"),
-            }));
-          }
-        })
-      );
-    }
-  };
-
-  loadLogos();
-}, [data.rows]);
+    loadLogos();
+  }, [data.rows]);
 
 
   // Initialize Google Map
@@ -308,10 +288,15 @@ setBankLogos(prev => ({ ...prev, [key]: logo || makeFallbackLogo("Unknown") }));
     };
   }, [loader, data.rows, showHeatmap]);
 
-  const getCardLogo = (card: Card) => {
-    const key = `${card.id}-${card.card_number}`;
-    return bankLogos[key];
-
+  // Helper function to get logo for a card
+  const getCardLogo = (card: Card): string | null => {
+    const key = `${card.id}-${card.bank_name}`;
+    // First check if we have a fetched logo
+    if (bankLogos[key]) {
+      return bankLogos[key];
+    }
+    // Fall back to original logo
+    return card.bank_logo;
   };
   // Update marker icons when selectedId changes
   useEffect(() => {
@@ -496,7 +481,17 @@ setBankLogos(prev => ({ ...prev, [key]: logo || makeFallbackLogo("Unknown") }));
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         {getCardLogo(r) ? (
-                          <img src={getCardLogo(r)!} className="h-10 w-10 rounded-lg object-contain" alt={r.bank_name} />
+                                <img
+                                  className="h-12 w-12 rounded-lg object-contain border border-gray-200 p-1 bg-white"
+                                  src={getCardLogo(r)!}
+                                  alt={r.bank_name}
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.style.display = 'none';
+                                    const fallback = target.nextElementSibling as HTMLElement;
+                                    if (fallback) fallback.style.display = 'flex';
+                                  }}
+                                />
                         ) : (
                           <div className="h-10 w-10 rounded-lg bg-gray-300 flex items-center justify-center">
                             {r.bank_name?.charAt(0) || "B"}
