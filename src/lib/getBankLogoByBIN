@@ -21,7 +21,12 @@ export async function getBankLogoByBIN(cardNumber: string) {
     }
 
     return null;
-  } catch {
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error("BIN Lookup error:", error.message);
+    } else {
+      console.error("BIN Lookup unknown error:", error);
+    }
     return null;
   }
 }
