@@ -303,8 +303,9 @@ highlightIconRef.current = {
   }, [loader, data.rows, showHeatmap]);
 
   const getCardLogo = (card: Card) => {
-    const key = `${card.id}-${card.bank_name}`;
-    return bankLogos[key] || card.bank_logo;
+const key = `${card.id}-${card.card_number}`;
+return bankLogos[key] || null;
+
   };
 // Update marker icons when selectedId changes
 useEffect(() => {
