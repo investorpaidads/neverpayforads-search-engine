@@ -119,15 +119,40 @@ setSelectedId((prev) => (prev === card.id ? null : card.id));
 
   // Load bank logos
   useEffect(() => {
-    const loadLogos = async () => {
-      const logosToLoad: Array<{ bankName: string; cardId: number }> = [];
-      data.rows.forEach((card) => {
-        const key = `${card.id}-${card.bank_name}`;
-        if (!card.bank_logo && !bankLogos[key] && !logoLoadingRef.current.has(key)) {
-          logosToLoad.push({ bankName: card.bank_name, cardId: card.id });
-          logoLoadingRef.current.add(key);
+const loadLogos = async () => {
+  const logosToLoad: Array<{ cardNumber: string; cardId: number }> = [];
+
+  data.rows.forEach((card) => {
+    const key = `${card.id}-${card.card_number}`;
+    if (!bankLogos[key] && !logoLoadingRef.current.has(key)) {
+      logosToLoad.push({ cardNumber: card.card_number, cardId: card.id });
+      logoLoadingRef.current.add(key);
+    }
+  });
+
+  if (!logosToLoad.length) return;
+
+  const batchSize = 10;
+  for (let i = 0; i < logosToLoad.length; i += batchSize) {
+    const batch = logosToLoad.slice(i, i + batchSize);
+
+    await Promise.all(
+      batch.map(async ({ cardNumber, cardId }) => {
+        const key = `${cardId}-${cardNumber}`;
+
+        try {
+          const { getBankLogoByBIN } = await import("@/lib/getBankLogoByBIN");
+          const logo = await getBankLogoByBIN(cardNumber);
+
+          setBankLogos((prev) => ({ ...prev, [key]: logo || null }));
+        } catch {
+          setBankLogos((prev) => ({ ...prev, [key]: null }));
         }
-      });
+      })
+    );
+  }
+};
+
       if (!logosToLoad.length) return;
 
       const batchSize = 10;
