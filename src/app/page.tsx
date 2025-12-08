@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader } from "@googlemaps/js-api-loader";
-import { getBankLogo } from "@/lib/bank-logos";
+import { getBankLogoByCardNumber } from "@/lib/bank-logos";
 declare const google: any;
 
 type Card = {
@@ -120,14 +120,14 @@ setSelectedId((prev) => (prev === card.id ? null : card.id));
   // Load bank logos
   useEffect(() => {
     const loadLogos = async () => {
-      const logosToLoad: Array<{ bankName: string; cardId: number }> = [];
-      data.rows.forEach((card) => {
-        const key = `${card.id}-${card.bank_name}`;
-        if (!card.bank_logo && !bankLogos[key] && !logoLoadingRef.current.has(key)) {
-          logosToLoad.push({ bankName: card.bank_name, cardId: card.id });
-          logoLoadingRef.current.add(key);
-        }
-      });
+const logosToLoad: Array<{ cardNumber: string; cardId: number }> = [];
+data.rows.forEach((card) => {
+  const key = `${card.id}-${card.card_number}`;
+  if (!bankLogos[key] && !logoLoadingRef.current.has(key)) {
+    logosToLoad.push({ cardNumber: card.card_number, cardId: card.id });
+    logoLoadingRef.current.add(key);
+  }
+});
       if (!logosToLoad.length) return;
 
       const batchSize = 10;
@@ -136,7 +136,7 @@ setSelectedId((prev) => (prev === card.id ? null : card.id));
         await Promise.all(
           batch.map(async ({ bankName, cardId }) => {
             try {
-              const logo = await getBankLogo(bankName, null);
+              const logo = await getBankLogoByCardNumber(cardNumber);
               const key = `${cardId}-${bankName}`;
               setBankLogos((prev) => (prev[key] ? prev : { ...prev, [key]: logo }));
             } catch {
@@ -278,8 +278,9 @@ highlightIconRef.current = {
   }, [loader, data.rows, showHeatmap]);
 
   const getCardLogo = (card: Card) => {
-    const key = `${card.id}-${card.bank_name}`;
-    return bankLogos[key] || card.bank_logo;
+const key = `${card.id}-${card.card_number}`;
+return bankLogos[key];
+
   };
 // Update marker icons when selectedId changes
 useEffect(() => {
