@@ -132,7 +132,7 @@ const loadLogos = async () => {
 
 
 
-      if (!logosToLoad.length) return;
+      /*if (!logosToLoad.length) return;
 
       const batchSize = 10;
       for (let i = 0; i < logosToLoad.length; i += batchSize) {
@@ -149,7 +149,7 @@ const loadLogos = async () => {
             }
           })
         );
-      }
+      }*/
     };
     loadLogos();
   }, [data.rows]);
