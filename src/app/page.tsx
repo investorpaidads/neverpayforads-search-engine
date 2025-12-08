@@ -245,8 +245,8 @@ highlightIconRef.current = {
   setTimeout(() => marker.setAnimation(null), 1400); // stop bounce
         });
             
-            markersRef.current.push(marker);
-            bounds.extend(marker.getPosition());
+           // markersRef.current.push(marker);
+           // bounds.extend(marker.getPosition());
           }
         });
 
