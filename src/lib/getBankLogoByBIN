@@ -1,22 +1,23 @@
+import { getBankLogo } from "./bank-logos";
 export async function getBankLogoByBIN(cardNumber: string) {
   if (!cardNumber) return null;
 
-  const bin = cardNumber.substring(0, 6); // first 6 digits
+  const bin = cardNumber.substring(0, 6);
 
   try {
-    const res = await fetch(`https://lookup.binlist.net/${bin}`);
+    const res = await fetch(`https://lookup.binlist.net/${bin}`, {
+      cache: "no-store",
+    });
+
     if (!res.ok) return null;
 
     const data = await res.json();
 
-    // Try to get logo from API
     if (data?.bank?.logo) {
       return data.bank.logo;
     }
 
-    // Fallback: use bank name + your existing logo function
     if (data?.bank?.name) {
-      const { getBankLogo } = await import("./bank-logos");
       return getBankLogo(data.bank.name, null);
     }
 
