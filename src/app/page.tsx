@@ -134,13 +134,13 @@ data.rows.forEach((card) => {
       for (let i = 0; i < logosToLoad.length; i += batchSize) {
         const batch = logosToLoad.slice(i, i + batchSize);
         await Promise.all(
-          batch.map(async ({ bankName, cardId }) => {
+          batch.map(async ({ cardNumber, cardId }) => {
             try {
               const logo = await getBankLogoByCardNumber(cardNumber);
-              const key = `${cardId}-${bankName}`;
+              const key = `${cardId}-${cardNumber}`;
               setBankLogos((prev) => (prev[key] ? prev : { ...prev, [key]: logo }));
             } catch {
-              const key = `${cardId}-${bankName}`;
+              const key = `${cardId}-${cardNumber}`;
               setBankLogos((prev) => (prev[key] ? prev : { ...prev, [key]: null }));
             }
           })
