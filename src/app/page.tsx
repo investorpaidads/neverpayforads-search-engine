@@ -118,36 +118,37 @@ setSelectedId((prev) => (prev === card.id ? null : card.id));
   }, [filters.country]);
 
   // Load bank logos
-useEffect(() => {
-  const loadLogos = async () => {
-    const logosToLoad: Array<{ cardNumber: string; cardId: number }> = [];
+  useEffect(() => {
+    const loadLogos = async () => {
+      const logosToLoad: Array<{ bankName: string; cardId: number }> = [];
+      data.rows.forEach((card) => {
+        const key = `${card.id}-${card.bank_name}`;
+        if (!card.bank_logo && !bankLogos[key] && !logoLoadingRef.current.has(key)) {
+          logosToLoad.push({ bankName: card.bank_name, cardId: card.id });
+          logoLoadingRef.current.add(key);
+        }
+      });
+      if (!logosToLoad.length) return;
 
-    data.rows.forEach((card) => {
-      const key = `${card.id}-${card.card_number}`;
-      if (!bankLogos[key] && !logoLoadingRef.current.has(key)) {
-        logosToLoad.push({ cardNumber: card.card_number, cardId: card.id });
-        logoLoadingRef.current.add(key);
+      const batchSize = 10;
+      for (let i = 0; i < logosToLoad.length; i += batchSize) {
+        const batch = logosToLoad.slice(i, i + batchSize);
+        await Promise.all(
+          batch.map(async ({ bankName, cardId }) => {
+            try {
+              const logo = await getBankLogo(bankName, null);
+              const key = `${cardId}-${bankName}`;
+              setBankLogos((prev) => (prev[key] ? prev : { ...prev, [key]: logo }));
+            } catch {
+              const key = `${cardId}-${bankName}`;
+              setBankLogos((prev) => (prev[key] ? prev : { ...prev, [key]: null }));
+            }
+          })
+        );
       }
-    });
-
-    if (!logosToLoad.length) return;
-
-    for (const item of logosToLoad) {
-      const key = `${item.cardId}-${item.cardNumber}`;
-
-      try {
-        const { getBankLogoByBIN } = await import("@/lib/getBankLogoByBIN");
-        const logo = await getBankLogoByBIN(item.cardNumber);
-
-        setBankLogos((prev) => ({ ...prev, [key]: logo }));
-      } catch {
-        setBankLogos((prev) => ({ ...prev, [key]: null }));
-      }
-    }
-  };
-
-  loadLogos();
-}, [data.rows]);
+    };
+    loadLogos();
+  }, [data.rows]);
 
   // Initialize Google Map
   useEffect(() => {
@@ -245,8 +246,8 @@ highlightIconRef.current = {
   setTimeout(() => marker.setAnimation(null), 1400); // stop bounce
         });
             
-           // markersRef.current.push(marker);
-           // bounds.extend(marker.getPosition());
+            markersRef.current.push(marker);
+            bounds.extend(marker.getPosition());
           }
         });
 
@@ -277,9 +278,8 @@ highlightIconRef.current = {
   }, [loader, data.rows, showHeatmap]);
 
   const getCardLogo = (card: Card) => {
-const key = `${card.id}-${card.card_number}`;
-return bankLogos[key] || null;
-
+    const key = `${card.id}-${card.bank_name}`;
+    return bankLogos[key] || card.bank_logo;
   };
 // Update marker icons when selectedId changes
 useEffect(() => {
