@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
     };
 
     console.log('[API] Calling queryCards with params:', params);
-    const data = await queryCards(params); // <-- await is required
+    const data = await queryCards(params);
     console.log('[API] queryCards returned:', data.total, 'total records');
 
     // Mask card numbers
@@ -70,10 +70,18 @@ export async function GET(req: NextRequest) {
     return new Response(JSON.stringify(maskedData), {
       headers: { 'content-type': 'application/json' },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[API] Cards route error:', error);
+
+    const message =
+      error instanceof Error
+        ? error.message
+        : typeof error === 'string'
+        ? error
+        : 'Unknown error';
+
     return new Response(
-      JSON.stringify({ error: 'Internal server error', details: error.message }),
+      JSON.stringify({ error: 'Internal server error', details: message }),
       { status: 500, headers: { 'content-type': 'application/json' } }
     );
   }
