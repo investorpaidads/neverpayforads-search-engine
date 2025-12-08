@@ -1,41 +1,26 @@
+// src/lib/getBankLogoByBIN.ts
 import { getBankLogo } from "./bank-logos";
 
-type BinlistResponse = {
-  bank?: {
-    name?: string;
-    logo?: string;
-  };
-};
-
-export async function getBankLogoByBIN(cardNumber: string) {
+export async function getBankLogoByBIN(cardNumber: string): Promise<string | null> {
   if (!cardNumber) return null;
 
   const bin = cardNumber.substring(0, 6);
 
   try {
-    const res = await fetch(`https://lookup.binlist.net/${bin}`, {
-      cache: "no-store",
-    });
-
+    const res = await fetch(`https://lookup.binlist.net/${bin}`, { cache: "no-store" });
     if (!res.ok) return null;
 
-    const data: BinlistResponse = await res.json();
+    const data: any = await res.json(); // use 'any' so no type declarations needed
 
-    if (data.bank?.logo) {
-      return data.bank.logo;
-    }
+    // Use logo from API if available
+    if (data?.bank?.logo) return data.bank.logo;
 
-    if (data.bank?.name) {
-      return getBankLogo(data.bank.name, null);
-    }
+    // Fallback: use bank name + local logo function
+    if (data?.bank?.name) return getBankLogo(data.bank.name, null);
 
     return null;
   } catch (error) {
-    if (error instanceof Error) {
-      console.error("BIN Lookup error:", error.message);
-    } else {
-      console.error("BIN Lookup unknown error:", error);
-    }
+    console.error("BIN Lookup error:", error);
     return null;
   }
 }
