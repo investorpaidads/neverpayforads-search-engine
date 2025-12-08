@@ -441,9 +441,9 @@ useEffect(() => {
 
 
           {/* Cards Table */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-auto">
-            <table className="min-w-full">
-              <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
+          <div className="flex-1 overflow-auto max-h-[600px] relative">
+            <table className="min-w-full border-collapse">
+              <thead className="bg-white border-b border-gray-200 sticky top-0 z-20 shadow">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Bank</th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Card Number</th>
