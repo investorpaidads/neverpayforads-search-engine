@@ -1,4 +1,12 @@
 import { getBankLogo } from "./bank-logos";
+
+type BinlistResponse = {
+  bank?: {
+    name?: string;
+    logo?: string;
+  };
+};
+
 export async function getBankLogoByBIN(cardNumber: string) {
   if (!cardNumber) return null;
 
@@ -11,13 +19,13 @@ export async function getBankLogoByBIN(cardNumber: string) {
 
     if (!res.ok) return null;
 
-    const data = await res.json();
+    const data: BinlistResponse = await res.json();
 
-    if (data?.bank?.logo) {
+    if (data.bank?.logo) {
       return data.bank.logo;
     }
 
-    if (data?.bank?.name) {
+    if (data.bank?.name) {
       return getBankLogo(data.bank.name, null);
     }
 
