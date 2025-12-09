@@ -21,6 +21,19 @@ type Card = {
   latitude: number | null;
   longitude: number | null;
 };
+function makeFallbackLogo(name: string): string {
+  const initials = name
+    .split(/\s+/)
+    .map(w => w[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+  const colors = ["#3b82f6","#10b981","#f59e0b","#ef4444","#8b5cf6","#06b6d4","#ec4899","#14b8a6"];
+  const color = colors[name.charCodeAt(0) % colors.length];
+  const svg = `<svg width="96" height="96" xmlns="http://www.w3.org/2000/svg"><rect width="96" height="96" rx="12" fill="${color}" /><text x="48" y="54" text-anchor="middle" font-family="Arial" font-size="34" font-weight="bold" fill="white">${initials}</text></svg>`;
+  return `data:image/svg+xml;base64,${typeof btoa === "function" ? btoa(svg) : Buffer.from(svg).toString("base64")}`;
+}
 
 export default function Home() {
   const [filters, setFilters] = useState({
@@ -35,32 +48,32 @@ export default function Home() {
     total: 0,
   });
   const [selectedId, setSelectedId] = useState<number | null>(null);
-const normalIconRef = useRef<any>(null);
-const highlightIconRef = useRef<any>(null);
+  const normalIconRef = useRef<any>(null);
+  const highlightIconRef = useRef<any>(null);
 
-const handleRowClick = (card: Card) => {
-  if (!mapRef.current || !card.latitude || !card.longitude) return;
+  const handleRowClick = (card: Card) => {
+    if (!mapRef.current || !card.latitude || !card.longitude) return;
 
-  const pos = { lat: card.latitude, lng: card.longitude };
+    const pos = { lat: card.latitude, lng: card.longitude };
 
-  // 1. Move map to marker center
-  mapRef.current.panTo(pos);
-  mapRef.current.setZoom(12);
-setSelectedId((prev) => (prev === card.id ? null : card.id));
-  // 2. Update selected marker
-  //setSelectedId(card.id);
+    // 1. Move map to marker center
+    mapRef.current.panTo(pos);
+    mapRef.current.setZoom(12);
+    setSelectedId((prev) => (prev === card.id ? null : card.id));
+    // 2. Update selected marker
+    //setSelectedId(card.id);
 
-  // 3. Change marker icon immediately
-  markersRef.current.forEach((m) => {
-    if (m.cardId === (selectedId === card.id ? null : card.id)) {
-      m.setIcon(highlightIconRef.current);
-      m.setZIndex(2000);
-    } else {
-      m.setIcon(normalIconRef.current);
-      m.setZIndex(1000);
-    }
-  });
-};
+    // 3. Change marker icon immediately
+    markersRef.current.forEach((m) => {
+      if (m.cardId === (selectedId === card.id ? null : card.id)) {
+        m.setIcon(highlightIconRef.current);
+        m.setZIndex(2000);
+      } else {
+        m.setIcon(normalIconRef.current);
+        m.setZIndex(1000);
+      }
+    });
+  };
 
   const [loading, setLoading] = useState(false);
   const [options, setOptions] = useState<{ countries: string[]; states: string[] }>({
@@ -114,41 +127,45 @@ setSelectedId((prev) => (prev === card.id ? null : card.id));
     fetch(url)
       .then((r) => r.json())
       .then((d) => setOptions(d))
-      .catch(() => {});
+      .catch(() => { });
   }, [filters.country]);
 
   // Load bank logos
-  useEffect(() => {
-    const loadLogos = async () => {
-const logosToLoad: Array<{ cardNumber: string; cardId: number }> = [];
-data.rows.forEach((card) => {
-  const key = `${card.id}-${card.card_number}`;
-  if (!bankLogos[key] && !logoLoadingRef.current.has(key)) {
-    logosToLoad.push({ cardNumber: card.card_number, cardId: card.id });
-    logoLoadingRef.current.add(key);
-  }
-});
-      if (!logosToLoad.length) return;
+useEffect(() => {
+  const loadLogos = async () => {
+    const logosToLoad: Array<{ cardNumber: string; cardId: number }> = [];
 
-      const batchSize = 10;
-      for (let i = 0; i < logosToLoad.length; i += batchSize) {
-        const batch = logosToLoad.slice(i, i + batchSize);
-        await Promise.all(
-          batch.map(async ({ cardNumber, cardId }) => {
-            try {
-              const logo = await getBankLogoByCardNumber(cardNumber);
-              const key = `${cardId}-${cardNumber}`;
-              setBankLogos((prev) => ({ ...prev, [key]: logo }));
-            } catch {
-              const key = `${cardId}-${cardNumber}`;
-              setBankLogos((prev) => ({ ...prev, [key]: logo }));
-            }
-          })
-        );
+    data.rows.forEach((card) => {
+      const key = `${card.id}-${card.card_number}`;
+      if (!bankLogos[key] && !logoLoadingRef.current.has(key)) {
+        logosToLoad.push({ cardNumber: card.card_number, cardId: card.id });
+        logoLoadingRef.current.add(key);
       }
-    };
-    loadLogos();
-  }, [data.rows]);
+    });
+
+    if (!logosToLoad.length) return;
+
+    const batchSize = 10; // limit concurrency
+    for (let i = 0; i < logosToLoad.length; i += batchSize) {
+      const batch = logosToLoad.slice(i, i + batchSize);
+      await Promise.all(
+        batch.map(async ({ cardNumber, cardId }) => {
+          const key = `${cardId}-${cardNumber}`;
+          try {
+            const logo = await getBankLogoByCardNumber(cardNumber);
+            setBankLogos((prev) => ({ ...prev, [key]: logo || null }));
+          } catch (err) {
+            console.error("Failed to fetch logo for", cardNumber, err);
+            setBankLogos((prev) => ({ ...prev, [key]: makeFallbackLogo("Unknown") }));
+          }
+        })
+      );
+    }
+  };
+
+  loadLogos();
+}, [data.rows]);
+
 
   // Initialize Google Map
   useEffect(() => {
@@ -163,11 +180,11 @@ data.rows.forEach((card) => {
 
         map = new google.maps.Map(mapEl, { center: { lat: 0, lng: 0 }, zoom: 2 });
         mapRef.current = map;
-    // --- Initialize icon refs ---
-normalIconRef.current = {
-  url:
-    "data:image/svg+xml;charset=UTF-8," +
-    encodeURIComponent(`
+        // --- Initialize icon refs ---
+        normalIconRef.current = {
+          url:
+            "data:image/svg+xml;charset=UTF-8," +
+            encodeURIComponent(`
 <svg xmlns="http://www.w3.org/2000/svg" width="48" height="60" viewBox="0 0 48 60">
   <defs>
     <linearGradient id="gradNormal" x1="0" y1="0" x2="0" y2="1">
@@ -185,14 +202,14 @@ normalIconRef.current = {
   <circle cx="24" cy="24" r="10" fill="white"/>
 </svg>
 `),
-  scaledSize: new google.maps.Size(48, 60),
-  anchor: new google.maps.Point(24, 60),
-};
+          scaledSize: new google.maps.Size(48, 60),
+          anchor: new google.maps.Point(24, 60),
+        };
 
-highlightIconRef.current = {
-  url:
-    "data:image/svg+xml;charset=UTF-8," +
-    encodeURIComponent(`
+        highlightIconRef.current = {
+          url:
+            "data:image/svg+xml;charset=UTF-8," +
+            encodeURIComponent(`
 <svg xmlns="http://www.w3.org/2000/svg" width="52" height="66" viewBox="0 0 52 66">
   <defs>
     <linearGradient id="gradHighlight" x1="0" y1="0" x2="0" y2="1">
@@ -210,14 +227,14 @@ highlightIconRef.current = {
   <circle cx="26" cy="28" r="12" fill="white"/>
 </svg>
 `),
-  scaledSize: new google.maps.Size(52, 66),
-  anchor: new google.maps.Point(26, 66),
-};
+          scaledSize: new google.maps.Size(52, 66),
+          anchor: new google.maps.Point(26, 66),
+        };
 
         // Clear previous markers
         markersRef.current.forEach((m) => m.setMap(null));
         markersRef.current = [];
-    // Icons must be created here because google.maps exists
+        // Icons must be created here because google.maps exists
 
         const bounds = new google.maps.LatLngBounds();
 
@@ -230,22 +247,22 @@ highlightIconRef.current = {
             const pos = { lat: card.latitude, lng: card.longitude };
             const marker = new google.maps.Marker({
               position: { lat: card.latitude, lng: card.longitude },
-              map:mapRef.current,
+              map: mapRef.current,
               title: card.cardholder_name,
-              icon:card.id === selectedId ?  highlightIconRef.current : normalIconRef.current,
-                optimized: false, // <-- important
+              icon: card.id === selectedId ? highlightIconRef.current : normalIconRef.current,
+              optimized: false, // <-- important
               mapPaneName: "overlayMouseTarget",
               zIndex: isSelected ? 2000 : 1000,
             });
-                markersRef.current.push(marker);
+            markersRef.current.push(marker);
             bounds.extend(pos);
             marker.cardId = card.id;
             marker.addListener("click", () => {
-  marker.setAnimation(google.maps.Animation.BOUNCE);
+              marker.setAnimation(google.maps.Animation.BOUNCE);
               setSelectedId(card.id);
-  setTimeout(() => marker.setAnimation(null), 1400); // stop bounce
-        });
-            
+              setTimeout(() => marker.setAnimation(null), 1400); // stop bounce
+            });
+
             markersRef.current.push(marker);
             bounds.extend(marker.getPosition());
           }
@@ -278,22 +295,22 @@ highlightIconRef.current = {
   }, [loader, data.rows, showHeatmap]);
 
   const getCardLogo = (card: Card) => {
-const key = `${card.id}-${card.card_number}`;
-return bankLogos[key];
+    const key = `${card.id}-${card.card_number}`;
+    return bankLogos[key];
 
   };
-// Update marker icons when selectedId changes
-useEffect(() => {
-  markersRef.current.forEach((marker) => {
-    if (marker.cardId === selectedId) {
-      marker.setIcon(highlightIconRef.current);
-      marker.setZIndex(2000);
-    } else {
-      marker.setIcon(normalIconRef.current);
-      marker.setZIndex(1000);
-    }
-  });
-}, [selectedId]);
+  // Update marker icons when selectedId changes
+  useEffect(() => {
+    markersRef.current.forEach((marker) => {
+      if (marker.cardId === selectedId) {
+        marker.setIcon(highlightIconRef.current);
+        marker.setZIndex(2000);
+      } else {
+        marker.setIcon(normalIconRef.current);
+        marker.setZIndex(1000);
+      }
+    });
+  }, [selectedId]);
   const onExportCsv = () => {
     const headers = [
       "bank_name",
@@ -413,32 +430,32 @@ useEffect(() => {
         {/* Main Content */}
         <div className="flex-1 p-6 space-y-6">
           {/* Map */}
-<div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sticky top-0 z-50">
-  <div className="flex items-center justify-between mb-3">
-    <h2 className="font-semibold text-lg">🌍 Geographic Distribution</h2>
-    <div className="flex items-center gap-2">
-      <button
-        className={`px-3 py-1 text-sm rounded-md ${!showHeatmap ? "bg-blue-500 text-white" : "bg-gray-200"}`}
-        onClick={() => setShowHeatmap(false)}
-      >
-        Locations
-      </button>
-      <button
-        className={`px-3 py-1 text-sm rounded-md ${showHeatmap ? "bg-red-500 text-white" : "bg-gray-200"}`}
-        onClick={() => setShowHeatmap(true)}
-      >
-        Density
-      </button>
-      <button
-        className="px-3 py-1 text-sm rounded-md bg-green-500 text-white"
-        onClick={onExportCsv}
-      >
-        📊 Export
-      </button>
-    </div>
-  </div>
-  <div id="map-desktop" className="w-full h-[400px] rounded-md" />
-</div>
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sticky top-0 z-50">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-semibold text-lg">🌍 Geographic Distribution</h2>
+              <div className="flex items-center gap-2">
+                <button
+                  className={`px-3 py-1 text-sm rounded-md ${!showHeatmap ? "bg-blue-500 text-white" : "bg-gray-200"}`}
+                  onClick={() => setShowHeatmap(false)}
+                >
+                  Locations
+                </button>
+                <button
+                  className={`px-3 py-1 text-sm rounded-md ${showHeatmap ? "bg-red-500 text-white" : "bg-gray-200"}`}
+                  onClick={() => setShowHeatmap(true)}
+                >
+                  Density
+                </button>
+                <button
+                  className="px-3 py-1 text-sm rounded-md bg-green-500 text-white"
+                  onClick={onExportCsv}
+                >
+                  📊 Export
+                </button>
+              </div>
+            </div>
+            <div id="map-desktop" className="w-full h-[400px] rounded-md" />
+          </div>
 
 
           {/* Cards Table */}
@@ -457,12 +474,11 @@ useEffect(() => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {data.rows.map((r) => (
                   <tr
-  key={r.id}
-  onClick={() => handleRowClick(r)}
-  className={`transition-colors cursor-pointer ${
-    r.id === selectedId ? "bg-blue-100" : "hover:bg-gray-50"
-  }`}
->
+                    key={r.id}
+                    onClick={() => handleRowClick(r)}
+                    className={`transition-colors cursor-pointer ${r.id === selectedId ? "bg-blue-100" : "hover:bg-gray-50"
+                      }`}
+                  >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         {getCardLogo(r) ? (
