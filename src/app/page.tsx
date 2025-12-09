@@ -158,7 +158,9 @@ useEffect(() => {
         batch.map(async ({ cardNumber, cardId }) => {
           const key = `${cardId}-${cardNumber}`;
           try {
-            const logo = await getBankLogoByCardNumber(cardNumber);
+            const logo = await fetchLogo(card.card_number);
+
+            //const logo = await getBankLogoByCardNumber(cardNumber);
             setBankLogos((prev) => ({ ...prev, [key]: logo || null }));
           } catch (err) {
             console.error("Failed to fetch logo for", cardNumber, err);
