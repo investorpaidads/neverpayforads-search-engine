@@ -536,7 +536,7 @@ export default function Home() {
                     >
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
-                          {getCardLogo(r) ? (
+                          {getCardLogo(r)!="" ? (
                             <img
                               className="h-12 w-12 rounded-lg object-contain border border-gray-200 p-1 bg-white"
                                   src={getCardLogo(r)!}
