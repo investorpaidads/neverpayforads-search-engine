@@ -51,17 +51,15 @@ setSelectedId((prev) => (prev === card.id ? null : card.id));
   //setSelectedId(card.id);
 
   // 3. Change marker icon immediately
-const newSelectedId = selectedId === card.id ? null : card.id;
-setSelectedId(newSelectedId);
-markersRef.current.forEach((m) => {
-  if (m.cardId === newSelectedId) {
-    m.setIcon(highlightIconRef.current);
-    m.setZIndex(2000);
-  } else {
-    m.setIcon(normalIconRef.current);
-    m.setZIndex(1000);
-  }
-});
+  markersRef.current.forEach((m) => {
+    if (m.cardId === (selectedId === card.id ? null : card.id)) {
+      m.setIcon(highlightIconRef.current);
+      m.setZIndex(2000);
+    } else {
+      m.setIcon(normalIconRef.current);
+      m.setZIndex(1000);
+    }
+  });
 };
 
   const [loading, setLoading] = useState(false);
@@ -248,7 +246,7 @@ highlightIconRef.current = {
   setTimeout(() => marker.setAnimation(null), 1400); // stop bounce
         });
             
-           // markersRef.current.push(marker);
+            markersRef.current.push(marker);
             bounds.extend(marker.getPosition());
           }
         });
@@ -467,15 +465,13 @@ useEffect(() => {
 >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
- {getCardLogo(r) === undefined ? (
-  <div className="h-10 w-10 animate-pulse bg-gray-300 rounded-lg" />
-) : getCardLogo(r) ? (
-  <img src={getCardLogo(r)!} ... />
-) : (
-  <div className="h-10 w-10 rounded-lg bg-gray-300 flex items-center justify-center">
-    {r.bank_name?.charAt(0) || "B"}
-  </div>
-)}
+                        {getCardLogo(r) ? (
+                          <img src={getCardLogo(r)!} className="h-10 w-10 rounded-lg object-contain" alt={r.bank_name} />
+                        ) : (
+                          <div className="h-10 w-10 rounded-lg bg-gray-300 flex items-center justify-center">
+                            {r.bank_name?.charAt(0) || "B"}
+                          </div>
+                        )}
                         <span>{r.bank_name}</span>
                       </div>
                     </td>
