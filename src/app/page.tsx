@@ -23,7 +23,11 @@ type Card = {
 };
 
 
+
+
 export default function Home() {
+  
+  
   const [filters, setFilters] = useState({
     country: "",
     state: "",
