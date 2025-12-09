@@ -294,9 +294,11 @@ export default function Home() {
     const key = `${card.id}-${card.bank_name}`;
     // First check if we have a fetched logo
     if (bankLogos[key]) {
+          console.log("image:::"+card.bank_logo);
       return bankLogos[key];
     }
     // Fall back to original logo
+    console.log("image:::"+card.bank_logo);
     return card.bank_logo;
   };
   // Update marker icons when selectedId changes
