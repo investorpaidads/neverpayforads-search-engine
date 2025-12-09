@@ -276,7 +276,7 @@ export default function Home() {
   const key = `${card.id}-${card.bank_name}`;
   if (bankLogos[key]) return bankLogos[key];
 
-  return card.bank_logo;
+  return "";//card.bank_logo;
   };
   // Update marker icons when selectedId changes
   useEffect(() => {
