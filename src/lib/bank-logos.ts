@@ -14,6 +14,39 @@ function normalizeBankName(bankName: string): string {
     .replace(/\s+/g, ' ')
     .trim();
 }
+async function downloadLogo(url: string, bankName: string) {
+  try {
+    // If it's a data URI (SVG placeholder), convert to Blob
+    if (url.startsWith("data:image/svg+xml;base64,")) {
+      const base64Data = url.replace("data:image/svg+xml;base64,", "");
+      const binary = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+      const blob = new Blob([binary], { type: "image/svg+xml" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `${bankName}.svg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+    } else {
+      // For normal URLs, fetch and download
+      const response = await fetch(url);
+      if (!response.ok) return;
+      const blob = await response.blob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      // Use .png if response type is image/png, fallback to .jpg
+      const ext = blob.type.split("/")[1] || "png";
+      a.download = `${bankName.trim().toLowerCase().replace(/\s+/g, '-')}.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+    }
+  } catch (err) {
+    console.error("Failed to download logo:", err);
+  }
+}
 
 /**
  * Get bank logo from online sources
@@ -52,6 +85,7 @@ export async function fetchBankLogo(bankName: string): Promise<string | null> {
         
         if (response.ok) {
           LOGO_CACHE.set(cacheKey, clearbitUrl);
+  //downloadLogo(clearbitUrl, cacheKey); // <-- download
           return clearbitUrl;
         }
       } catch (e) {

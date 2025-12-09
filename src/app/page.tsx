@@ -260,23 +260,21 @@ export default function Home() {
   // Helper function to get logo for a card
   const getCardLogo = (card: Card): string | null => {
   // Use local bank logo first
-  if (card.bank_name) {
-    // Normalize bank name to match your filenames
-    const normalized = card.bank_name.trim().toLowerCase().replace(/\s+/g, '-'); // e.g., "CIMB Bank" -> "cimb-bank"
+      const normalized = card.bank_name.trim().toLowerCase().replace(/\s+/g, '-'); // e.g., "CIMB Bank" -> "cimb-bank"
     const resultzz = normalized.replace(",-", '-');
     const resultzzz = resultzz.replace(".-", '-');
     const resultzzzz = resultzzz.replace('.', '');
-    
-//console.log("resultzzz", resultzzzz);
+  const _path=`/bank-logos/${resultzzzz}.png`;
  return `/bank-logos/${resultzzzz}.png`;
      // Assuming PNG files in public/bank-logos/
-  }
+  
+
 
   // Fallback to fetched logo
-  const key = `${card.id}-${card.bank_name}`;
-  if (bankLogos[key]) return bankLogos[key];
+   const key = `${card.id}-${card.bank_name}`;
+   if (bankLogos[key]) return bankLogos[key];
 
-  return "";//card.bank_logo;
+  return card.bank_logo;
   };
   // Update marker icons when selectedId changes
   useEffect(() => {
@@ -536,23 +534,61 @@ export default function Home() {
                     >
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
-                          {getCardLogo(r)!="" ? (
-                            <img
-                              className="h-12 w-12 rounded-lg object-contain border border-gray-200 p-1 bg-white"
+                              {getCardLogo(r) ? (
+                                <img
+                                  className="h-12 w-12 rounded-lg object-contain border border-gray-200 p-1 bg-white"
                                   src={getCardLogo(r)!}
-                              alt={r.bank_name}
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                target.style.display = 'none';
-                                const fallback = target.nextElementSibling as HTMLElement;
-                                if (fallback) fallback.style.display = 'flex';
-                              }}
-                            />
-                          ) : (
-                            <div className="h-10 w-10 rounded-lg bg-gray-300 flex items-center justify-center">
-                              {r.bank_name?.charAt(0) || "B"}
-                            </div>
-                          )}
+                                  alt={r.bank_name}
+                                  onError={(e) => {
+      const target = e.target as HTMLImageElement;
+
+    // 1️⃣ Generate 2-letter initials
+    const words = (r.bank_name || "Bank")
+      .split(/\s+/)
+      .filter(Boolean)
+      .map(w => w[0].toUpperCase());
+    const initials = words.slice(0, 2).join('') || 'BN';
+
+    // 2️⃣ Generate a consistent random color based on bank name
+    const colors = [
+      '#2563eb', '#16a34a', '#dc2626', '#9333ea',
+      '#ea580c', '#0ea5e9', '#d97706', '#f43f5e',
+      '#10b981', '#8b5cf6'
+    ];
+    // Simple hash function to pick color based on bank name
+    const hash = r.bank_name
+      .split('')
+      .reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const color = colors[hash % colors.length];
+
+    // 3️⃣ Create fallback SVG
+    const svg = `
+      <svg xmlns='http://www.w3.org/2000/svg' width='96' height='96'>
+        <rect width='96' height='96' rx='12' fill='${color}'/>
+        <text x='48' y='56' font-size='32' text-anchor='middle'
+              fill='white' font-family='Arial' font-weight='bold'>
+          ${initials}
+        </text>
+      </svg>
+    `.trim();
+
+    // 4️⃣ Replace failed image with fallback SVG
+    target.src = `data:image/svg+xml;base64,${btoa(svg)}`;
+                                    // const target = e.target as HTMLImageElement;
+                                    // target.style.display = 'none';
+                                    // const fallback = target.nextElementSibling as HTMLElement;
+                                    // if (fallback) fallback.style.display = 'flex';
+                                  }}
+                                />
+                              ) : null}
+                              {!getCardLogo(r) && (
+                                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-sm">
+                                  <span className="text-white text-sm font-bold">
+                                    {r.bank_name?.charAt(0) || 'B'}
+                                  </span>
+                                </div>
+                              )}
+
                           <span>{r.bank_name}</span>
                         </div>
                       </td>
