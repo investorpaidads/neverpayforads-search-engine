@@ -19,12 +19,7 @@ function getBIN(cardNumber: string): string | null {
  */
 async function lookupBankByBIN(bin: string) {
   try {
-    // Use CORS proxy
-    const proxyUrl = `https://cors-anywhere.herokuapp.com/https://lookup.binlist.net/${bin}`;
-    const res = await fetch(proxyUrl, {
-      headers: { "Accept-Version": "3" },
-    });
-
+    const res = await fetch(`/api/bin/${bin}`);
     if (!res.ok) return null;
 
     const data = await res.json();
