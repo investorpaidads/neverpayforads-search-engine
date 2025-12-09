@@ -162,7 +162,7 @@ useEffect(() => {
 
           try {
             const logo = await fetchLogo(cardNumber);
-            console.log("cardnumber loaded:", cardNumber);
+            console.log("cardnumber loaded:", logo);
             setBankLogos(prev => ({ ...prev, [key]: logo || null }));
           } catch (err) {
             console.error("Failed to fetch logo for", cardNumber, err);
