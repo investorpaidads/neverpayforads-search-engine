@@ -1,6 +1,7 @@
 // Utility function to fetch bank logos from online sources when missing
 
-const LOGO_CACHE = new Map<string, string | null>();
+const LOGO_CACHE: Map<string, string | null> = new Map();
+
 
 /**
  * Normalize bank name for logo search
