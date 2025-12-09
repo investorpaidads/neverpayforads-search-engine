@@ -560,7 +560,7 @@ export default function Home() {
                           {getCardLogo(r) ? (
                             <img
                               className="h-12 w-12 rounded-lg object-contain border border-gray-200 p-1 bg-white"
-                                  src={getBankLogoUrl(r.bank_name)}
+                                  src={getCardLogo(r)!}
                               alt={r.bank_name}
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement;
