@@ -1,35 +1,35 @@
+// app/api/logo/[domain]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 
-export const runtime = "nodejs"; // required so we can fetch binary image data
+export const runtime = "edge"; // works faster on Vercel
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { domain: string } }
-) {
-  const { domain } = params;
-
-  if (!domain) {
-    return NextResponse.json({ error: "Missing domain" }, { status: 400 });
-  }
-
+export async function GET(req: NextRequest, { params }: { params: { domain: string } }) {
   try {
-    const clearbitUrl = `https://logo.clearbit.com/${domain}`;
-    const resp = await fetch(clearbitUrl);
+    const { domain } = params;
 
-    if (!resp.ok) {
+    if (!domain || domain.trim() === "") {
+      return NextResponse.json({ error: "Missing domain" }, { status: 400 });
+    }
+
+    // fetch Clearbit logo
+    const logoUrl = `https://logo.clearbit.com/${encodeURIComponent(domain)}`;
+    const res = await fetch(logoUrl);
+
+    if (!res.ok) {
+      // fallback: return placeholder logo
       return NextResponse.json({ error: "Logo not found" }, { status: 404 });
     }
 
-    const buffer = await resp.arrayBuffer();
-    return new NextResponse(buffer, {
+    const arrayBuffer = await res.arrayBuffer();
+
+    return new NextResponse(arrayBuffer, {
       headers: {
-        "Content-Type": resp.headers.get("Content-Type") || "image/png",
-        "Cache-Control": "public, max-age=86400",
-        "Access-Control-Allow-Origin": "*",
+        "Content-Type": "image/png",
+        "Cache-Control": "public, max-age=604800, immutable", // cache 7 days
       },
     });
-  } catch (e) {
-    console.error("Logo proxy error:", e);
-    return NextResponse.json({ error: "Failed to fetch logo" }, { status: 500 });
+  } catch (err) {
+    console.error("Logo API error:", err);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
