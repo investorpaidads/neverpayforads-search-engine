@@ -151,20 +151,24 @@ useEffect(() => {
 
     if (!logosToLoad.length) return;
 
-    const batchSize = 10; // limit concurrency
+    const batchSize = 10;
+
     for (let i = 0; i < logosToLoad.length; i += batchSize) {
       const batch = logosToLoad.slice(i, i + batchSize);
+
       await Promise.all(
         batch.map(async ({ cardNumber, cardId }) => {
           const key = `${cardId}-${cardNumber}`;
-          try {
-            const logo = await fetchLogo(card.card_number);
 
-            //const logo = await getBankLogoByCardNumber(cardNumber);
-            setBankLogos((prev) => ({ ...prev, [key]: logo || null }));
+          try {
+            const logo = await fetchLogo(cardNumber);
+            setBankLogos(prev => ({ ...prev, [key]: logo || null }));
           } catch (err) {
             console.error("Failed to fetch logo for", cardNumber, err);
-            setBankLogos((prev) => ({ ...prev, [key]: makeFallbackLogo("Unknown") }));
+            setBankLogos(prev => ({
+              ...prev,
+              [key]: makeFallbackLogo("Unknown"),
+            }));
           }
         })
       );
