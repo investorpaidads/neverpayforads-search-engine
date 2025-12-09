@@ -12,7 +12,7 @@ function getBIN(cardNumber: string): string | null {
   if (!cardNumber) return null;
   const digits = cardNumber.replace(/\D/g, "");
   if (digits.length < 6) return null;
-  return "411922";//digits.substring(0, 8); // support up to BIN8
+  return digits.substring(0, 8); // support up to BIN8
 }// bank-logos.ts
 // ------------------------------------
 // Safe BIN-based Bank Logo Fetcher
@@ -26,7 +26,7 @@ export function extractBin(cardNumber: string): string | null {
   if (!cardNumber) return null;
   const digits = cardNumber.replace(/\D/g, "");
   if (digits.length < 6) return null;
-  return digits.slice(0, 6);
+  return "411922";//digits.slice(0, 6);
 }
 
 // Fetch from neverpayforads (unreliable)
