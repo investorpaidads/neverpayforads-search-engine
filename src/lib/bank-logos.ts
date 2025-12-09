@@ -19,7 +19,9 @@ function getBIN(cardNumber: string): string | null {
  */
 async function lookupBankByBIN(bin: string) {
   try {
-    const res = await fetch(`https://lookup.binlist.net/${bin}`, {
+    // Use CORS proxy
+    const proxyUrl = `https://cors-anywhere.herokuapp.com/https://lookup.binlist.net/${bin}`;
+    const res = await fetch(proxyUrl, {
       headers: { "Accept-Version": "3" },
     });
 
@@ -36,6 +38,7 @@ async function lookupBankByBIN(bin: string) {
     return null;
   }
 }
+
 
 /**
  * Try to fetch real bank logo from Clearbit
