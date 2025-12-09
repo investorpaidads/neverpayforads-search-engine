@@ -23,19 +23,7 @@ type Card = {
 };
 
 
-
-function normalizeBankName(bankName: string): string {
-  if (!bankName) return '';
-  
-  return bankName
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
 export default function Home() {
-  
-  
   const [filters, setFilters] = useState({
     country: "",
     state: "",
@@ -572,7 +560,7 @@ export default function Home() {
                           {getCardLogo(r) ? (
                             <img
                               className="h-12 w-12 rounded-lg object-contain border border-gray-200 p-1 bg-white"
-                              src={`https://logo.clearbit.com/${normalizeBankName(r.bank_name)}.com`}
+                              src={getCardLogo(r)!}
                               alt={r.bank_name}
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement;
