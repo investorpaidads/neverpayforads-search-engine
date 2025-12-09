@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader } from "@googlemaps/js-api-loader";
-import { getBankLogoByCardNumber } from "@/lib/bank-logos";
+//import { getBankLogoByCardNumber } from "@/lib/bank-logos";
 declare const google: any;
 
 type Card = {
@@ -21,6 +21,12 @@ type Card = {
   latitude: number | null;
   longitude: number | null;
 };
+async function fetchLogo(cardNumber: string) {
+  const res = await fetch(`/api/bank-logo?card=${cardNumber}`);
+  const data = await res.json();
+  return data.logo;
+}
+
 function makeFallbackLogo(name: string): string {
   const initials = name
     .split(/\s+/)
