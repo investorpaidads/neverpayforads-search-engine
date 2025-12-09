@@ -48,12 +48,12 @@ export async function fetchBankLogo(bankName: string): Promise<string | null> {
       try {
         // Use Clearbit Logo API (free, no API key needed for basic usage)
         const clearbitUrl = `https://logo.clearbit.com/${domain}`;
-        const response = await fetch(clearbitUrl, { method: 'HEAD' });
+   //     const response = await fetch(clearbitUrl, { method: 'HEAD' });
         
-        if (response.ok) {
+    //    if (response.ok) {
           LOGO_CACHE.set(cacheKey, clearbitUrl);
           return clearbitUrl;
-        }
+    //    }
       } catch (e) {
         // Continue to next attempt
       }
@@ -73,11 +73,11 @@ export async function fetchBankLogo(bankName: string): Promise<string | null> {
     
     for (const url of logoUrls) {
       try {
-        const response = await fetch(url, { method: 'HEAD' });
-        if (response.ok && response.headers.get('content-type')?.startsWith('image/')) {
+      //  const response = await fetch(url, { method: 'HEAD' });
+      // if (response.ok && response.headers.get('content-type')?.startsWith('image/')) {
           LOGO_CACHE.set(cacheKey, url);
           return url;
-        }
+     //   }
       } catch (e) {
         // Continue
       }
