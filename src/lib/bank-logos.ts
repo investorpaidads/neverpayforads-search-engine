@@ -49,6 +49,7 @@ async function fetchFromBinlist(bin: string): Promise<string | null> {
 // MAIN FUNCTION
 export async function getBankLogoByCardNumber(cardNumber: string): Promise<string | null> {
   const bin = extractBin(cardNumber);
+  console.log("bin_cardnumber:"+bin);
   if (!bin) return null;
 
   // Check cache first
