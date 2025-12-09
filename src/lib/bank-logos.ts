@@ -1,5 +1,7 @@
-// BIN-based Bank Logo Fetcher
-// -----------------------------------------
+// bank-logos.ts
+// -------------------------------
+// BIN-based Bank Logo Fetcher with server-side API
+// -------------------------------
 
 const LOGO_CACHE = new Map<string, string | null>();
 
@@ -14,16 +16,14 @@ function getBIN(cardNumber: string): string | null {
 }
 
 /**
- * Call BIN lookup API to get bank metadata
- * Free API: https://lookup.binlist.net/{BIN}
+ * Lookup BIN metadata via our Next.js API
+ * Calls /api/bin/[bin] on the same origin
  */
 async function lookupBankByBIN(bin: string) {
   try {
     const res = await fetch(`/api/bin/${bin}`);
     if (!res.ok) return null;
-
     const data = await res.json();
-
     return {
       bankName: data.bank?.name || null,
       bankUrl: data.bank?.url || null,
@@ -34,18 +34,15 @@ async function lookupBankByBIN(bin: string) {
   }
 }
 
-
 /**
  * Try to fetch real bank logo from Clearbit
  */
 async function tryClearbitLogo(domain: string): Promise<string | null> {
   const logoUrl = `https://logo.clearbit.com/${domain}`;
-
   try {
     const res = await fetch(logoUrl, { method: "HEAD" });
     if (res.ok) return logoUrl;
   } catch {}
-
   return null;
 }
 
@@ -86,10 +83,10 @@ export async function getBankLogoByCardNumber(cardNumber: string): Promise<strin
   const bin = getBIN(cardNumber);
   if (!bin) return null;
 
-  // cached?
+  // Cached?
   if (LOGO_CACHE.has(bin)) return LOGO_CACHE.get(bin);
 
-  // Step 1: Lookup BIN metadata
+  // Step 1: Lookup BIN metadata via server-side API
   const bankInfo = await lookupBankByBIN(bin);
   if (!bankInfo) {
     LOGO_CACHE.set(bin, null);
@@ -102,7 +99,6 @@ export async function getBankLogoByCardNumber(cardNumber: string): Promise<strin
   if (bankUrl) {
     const domain = bankUrl.replace(/^https?:\/\//, "").replace(/\/.*$/, "");
     const realLogo = await tryClearbitLogo(domain);
-
     if (realLogo) {
       LOGO_CACHE.set(bin, realLogo);
       return realLogo;
