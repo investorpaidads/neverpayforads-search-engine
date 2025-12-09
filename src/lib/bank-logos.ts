@@ -1,12 +1,12 @@
 // bank-logos.ts
 // -------------------------------
-// BIN-based Bank Logo Fetcher with server-side API
+// BIN-based Bank Logo Fetcher with caching, Clearbit support, and fallback SVG
 // -------------------------------
 
-const LOGO_CACHE = new Map<string, string | null>();
+const LOGO_CACHE = new Map<string, string>();
 
 /**
- * Extract BIN (first 6–8 digits)
+ * Extract BIN (first 6–8 digits) from card number
  */
 function getBIN(cardNumber: string): string | null {
   if (!cardNumber) return null;
@@ -17,7 +17,6 @@ function getBIN(cardNumber: string): string | null {
 
 /**
  * Lookup BIN metadata via our Next.js API
- * Calls /api/bin/[bin] on the same origin
  */
 async function lookupBankByBIN(bin: string) {
   try {
@@ -27,9 +26,10 @@ async function lookupBankByBIN(bin: string) {
     return {
       bankName: data.bank?.name || null,
       bankUrl: data.bank?.url || null,
-      country: data.country?.name || null,
+      country: data.country || null,
     };
-  } catch {
+  } catch (err) {
+    console.error("lookupBankByBIN error:", err);
     return null;
   }
 }
@@ -40,9 +40,12 @@ async function lookupBankByBIN(bin: string) {
 async function tryClearbitLogo(domain: string): Promise<string | null> {
   const logoUrl = `https://logo.clearbit.com/${domain}`;
   try {
-    const res = await fetch(logoUrl, { method: "HEAD" });
+    // HEAD can fail; fetch full GET and assume URL works
+    const res = await fetch(logoUrl);
     if (res.ok) return logoUrl;
-  } catch {}
+  } catch (err) {
+    console.warn("Clearbit fetch failed:", err);
+  }
   return null;
 }
 
@@ -73,45 +76,44 @@ function makeFallbackLogo(name: string): string {
     </svg>
   `.trim();
 
-  return `data:image/svg+xml;base64,${btoa(svg)}`;
+  return `data:image/svg+xml;base64,${typeof btoa === "function" ? btoa(svg) : Buffer.from(svg).toString("base64")}`;
 }
 
 /**
- * Main: Get real bank logo from card number
+ * Main: Get bank logo by card number
  */
-export async function getBankLogoByCardNumber(cardNumber: string): Promise<string | null> {
+export async function getBankLogoByCardNumber(cardNumber: string): Promise<string> {
   const bin = getBIN(cardNumber);
-  if (!bin) return null;
+  if (!bin) return makeFallbackLogo("Unknown");
 
   // Cached?
-  if (LOGO_CACHE.has(bin)) return LOGO_CACHE.get(bin);
+  if (LOGO_CACHE.has(bin)) return LOGO_CACHE.get(bin)!;
 
-  // Step 1: Lookup BIN metadata via server-side API
+  // Step 1: Lookup bank info
   const bankInfo = await lookupBankByBIN(bin);
-  if (!bankInfo) {
-    LOGO_CACHE.set(bin, null);
-    return null;
-  }
+  let logo: string | null = null;
 
-  const { bankName, bankUrl } = bankInfo;
+  if (bankInfo) {
+    const { bankName, bankUrl } = bankInfo;
 
-  // Step 2: If domain exists, try Clearbit
-  if (bankUrl) {
-    const domain = bankUrl.replace(/^https?:\/\//, "").replace(/\/.*$/, "");
-    const realLogo = await tryClearbitLogo(domain);
-    if (realLogo) {
-      LOGO_CACHE.set(bin, realLogo);
-      return realLogo;
+    // Step 2: Try Clearbit
+    if (bankUrl) {
+      const domain = bankUrl.replace(/^https?:\/\//, "").replace(/\/.*$/, "");
+      logo = await tryClearbitLogo(domain);
+    }
+
+    // Step 3: Fallback SVG if Clearbit fails
+    if (!logo && bankName) {
+      logo = makeFallbackLogo(bankName);
     }
   }
 
-  // Step 3: Fallback with initials
-  if (bankName) {
-    const fallback = makeFallbackLogo(bankName);
-    LOGO_CACHE.set(bin, fallback);
-    return fallback;
+  // Step 4: Final fallback
+  if (!logo) {
+    logo = makeFallbackLogo("Unknown");
   }
 
-  LOGO_CACHE.set(bin, null);
-  return null;
+  // Cache and return
+  LOGO_CACHE.set(bin, logo);
+  return logo;
 }

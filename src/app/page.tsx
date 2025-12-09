@@ -51,15 +51,17 @@ setSelectedId((prev) => (prev === card.id ? null : card.id));
   //setSelectedId(card.id);
 
   // 3. Change marker icon immediately
-  markersRef.current.forEach((m) => {
-    if (m.cardId === (selectedId === card.id ? null : card.id)) {
-      m.setIcon(highlightIconRef.current);
-      m.setZIndex(2000);
-    } else {
-      m.setIcon(normalIconRef.current);
-      m.setZIndex(1000);
-    }
-  });
+const newSelectedId = selectedId === card.id ? null : card.id;
+setSelectedId(newSelectedId);
+markersRef.current.forEach((m) => {
+  if (m.cardId === newSelectedId) {
+    m.setIcon(highlightIconRef.current);
+    m.setZIndex(2000);
+  } else {
+    m.setIcon(normalIconRef.current);
+    m.setZIndex(1000);
+  }
+});
 };
 
   const [loading, setLoading] = useState(false);
@@ -138,10 +140,10 @@ data.rows.forEach((card) => {
             try {
               const logo = await getBankLogoByCardNumber(cardNumber);
               const key = `${cardId}-${cardNumber}`;
-              setBankLogos((prev) => (prev[key] ? prev : { ...prev, [key]: logo }));
+              setBankLogos((prev) => ({ ...prev, [key]: logo }));
             } catch {
               const key = `${cardId}-${cardNumber}`;
-              setBankLogos((prev) => (prev[key] ? prev : { ...prev, [key]: null }));
+              setBankLogos((prev) => ({ ...prev, [key]: logo }));
             }
           })
         );
@@ -246,7 +248,7 @@ highlightIconRef.current = {
   setTimeout(() => marker.setAnimation(null), 1400); // stop bounce
         });
             
-            markersRef.current.push(marker);
+           // markersRef.current.push(marker);
             bounds.extend(marker.getPosition());
           }
         });
@@ -254,15 +256,17 @@ highlightIconRef.current = {
         if (!bounds.isEmpty()) map.fitBounds(bounds);
 
         // Heatmap
-        if (showHeatmap) {
-          heatmap = new google.maps.visualization.HeatmapLayer({
-            data: data.rows
-              .filter((c) => c.latitude && c.longitude)
-              .map((c) => new google.maps.LatLng(c.latitude!, c.longitude!)),
-            map,
-          });
-          heatmapRef.current = heatmap;
-        }
+if (showHeatmap) {
+  if (!heatmapRef.current) {
+    heatmapRef.current = new google.maps.visualization.HeatmapLayer({ ... });
+    heatmapRef.current.setMap(mapRef.current);
+  } else {
+    heatmapRef.current.setMap(mapRef.current);
+  }
+} else if (heatmapRef.current) {
+  heatmapRef.current.setMap(null);
+}
+
       } catch (err) {
         console.error("Google Maps failed to initialize", err);
       }
@@ -465,13 +469,15 @@ useEffect(() => {
 >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        {getCardLogo(r) ? (
-                          <img src={getCardLogo(r)!} className="h-10 w-10 rounded-lg object-contain" alt={r.bank_name} />
-                        ) : (
-                          <div className="h-10 w-10 rounded-lg bg-gray-300 flex items-center justify-center">
-                            {r.bank_name?.charAt(0) || "B"}
-                          </div>
-                        )}
+ {getCardLogo(r) === undefined ? (
+  <div className="h-10 w-10 animate-pulse bg-gray-300 rounded-lg" />
+) : getCardLogo(r) ? (
+  <img src={getCardLogo(r)!} ... />
+) : (
+  <div className="h-10 w-10 rounded-lg bg-gray-300 flex items-center justify-center">
+    {r.bank_name?.charAt(0) || "B"}
+  </div>
+)}
                         <span>{r.bank_name}</span>
                       </div>
                     </td>
