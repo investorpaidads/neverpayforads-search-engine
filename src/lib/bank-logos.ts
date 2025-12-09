@@ -3,7 +3,7 @@
 // BIN-based Bank Logo Fetcher with caching, Clearbit support, and fallback SVG
 // -------------------------------
 
-const LOGO_CACHE = new Map<string, string>();
+
 export { makeFallbackLogo };
 /**
  * Extract BIN (first 6–8 digits) from card number
@@ -26,7 +26,7 @@ export function extractBin(cardNumber: string): string | null {
   if (!cardNumber) return null;
   const digits = cardNumber.replace(/\D/g, "");
   if (digits.length < 6) return null;
-  return "411922";//digits.slice(0, 6);
+  return digits.slice(0, 6);
 }
 
 // Fetch from neverpayforads (unreliable)
