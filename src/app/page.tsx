@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader } from "@googlemaps/js-api-loader";
-//import { getBankLogoByCardNumber } from "@/lib/bank-logos";
+import { getBankLogoByCardNumber } from "@/lib/bank-logos";
 declare const google: any;
 
 type Card = {
@@ -163,9 +163,8 @@ useEffect(() => {
           const key = `${cardId}-${cardNumber}`;
 
           try {
-            const logo = await fetchLogo(cardNumber);
-            //console.log("cardnumber loaded:", logo);
-            setBankLogos(prev => ({ ...prev, [key]: logo || null }));
+const logo = await getBankLogoByCardNumber(cardNumber);
+setBankLogos(prev => ({ ...prev, [key]: logo || makeFallbackLogo("Unknown") }));
           } catch (err) {
            // console.error("Failed to fetch logo for", cardNumber, err);
             setBankLogos(prev => ({

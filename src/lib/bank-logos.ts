@@ -4,7 +4,7 @@
 // -------------------------------
 
 const LOGO_CACHE = new Map<string, string>();
-
+export { makeFallbackLogo };
 /**
  * Extract BIN (first 6–8 digits) from card number
  */
