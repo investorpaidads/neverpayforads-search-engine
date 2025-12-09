@@ -81,6 +81,7 @@ async function fetchFromBinlist(bin: string) {
 // MAIN FUNCTION
 export async function getBankLogoByCardNumber(cardNumber: string): Promise<string | null> {
   const bin = extractBin(cardNumber);
+  console.log("step1:"+cardNumber);
   if (!bin) return null;
 
   // Check cache first
@@ -95,10 +96,10 @@ export async function getBankLogoByCardNumber(cardNumber: string): Promise<strin
   if (!logo) {
     logo = await fetchFromBinlist(bin);
   }
-
+  console.log("step2:"+cardNumber);
   // Save into cache
   LOGO_CACHE.set(bin, logo ?? null);
-
+  console.log("step3:"+cardNumber);
   return logo;
 }
 

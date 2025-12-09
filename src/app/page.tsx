@@ -24,8 +24,8 @@ type Card = {
 async function fetchLogo(cardNumber: string) {
   const res = await fetch(`/api/bank-logo?card=${cardNumber}`);
   const data = await res.json();
-  console.log("const dataresn:"+res);
-  console.log("const datajson:"+data);
+  //console.log("const dataresn:"+res);
+  //console.log("const datajson:"+data);
   return data.logo;
 }
 
@@ -164,10 +164,10 @@ useEffect(() => {
 
           try {
             const logo = await fetchLogo(cardNumber);
-            console.log("cardnumber loaded:", logo);
+            //console.log("cardnumber loaded:", logo);
             setBankLogos(prev => ({ ...prev, [key]: logo || null }));
           } catch (err) {
-            console.error("Failed to fetch logo for", cardNumber, err);
+           // console.error("Failed to fetch logo for", cardNumber, err);
             setBankLogos(prev => ({
               ...prev,
               [key]: makeFallbackLogo("Unknown"),
