@@ -24,6 +24,8 @@ type Card = {
 async function fetchLogo(cardNumber: string) {
   const res = await fetch(`/api/bank-logo?card=${cardNumber}`);
   const data = await res.json();
+  console.log("const dataresn:"+res);
+  console.log("const datajson:"+data);
   return data.logo;
 }
 
