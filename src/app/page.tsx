@@ -256,17 +256,15 @@ highlightIconRef.current = {
         if (!bounds.isEmpty()) map.fitBounds(bounds);
 
         // Heatmap
-if (showHeatmap) {
-  if (!heatmapRef.current) {
-    heatmapRef.current = new google.maps.visualization.HeatmapLayer({ ... });
-    heatmapRef.current.setMap(mapRef.current);
-  } else {
-    heatmapRef.current.setMap(mapRef.current);
-  }
-} else if (heatmapRef.current) {
-  heatmapRef.current.setMap(null);
-}
-
+        if (showHeatmap) {
+          heatmap = new google.maps.visualization.HeatmapLayer({
+            data: data.rows
+              .filter((c) => c.latitude && c.longitude)
+              .map((c) => new google.maps.LatLng(c.latitude!, c.longitude!)),
+            map,
+          });
+          heatmapRef.current = heatmap;
+        }
       } catch (err) {
         console.error("Google Maps failed to initialize", err);
       }
