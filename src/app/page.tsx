@@ -31,6 +31,7 @@ export default function Home() {
     bankName: "",
     cardholder: "",
   });
+  const [lightMode, setLightMode] = useState(true);
   const [data, setData] = useState<{ rows: Card[]; total: number }>({
     rows: [],
     total: 0,
@@ -340,10 +341,23 @@ export default function Home() {
   const hasPrev = offset > 0;
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
+<div
+  className={`
+    min-h-screen font-sans 
+    transition-all 
+    ${lightMode ? "bg-white text-black" : "bg-black text-white"}
+  `}
+>
       {/* Desktop & Mobile UI */}
       <div className="lg:flex">
         {/* Sidebar */}
+        {/* <button
+  onClick={() => setLightMode(!lightMode)}
+  className="px-3 py-2 rounded-md border bg-gray-200 hover:bg-gray-300 font-semibold"
+>
+  {lightMode ? "🌙 Dark Mode" : "☀️ Light Mode"}
+</button> */}
+
         <div className="lg:w-80 bg-white shadow-sm border-r border-gray-200 p-6 sticky top-0 h-screen overflow-auto">
           <h1 className="text-2xl font-bold mb-6 tracking-tight">Credit Card Database</h1>
           <div className="space-y-4">
@@ -456,68 +470,132 @@ export default function Home() {
             <div id="map-desktop" className="w-full h-[400px] rounded-md" />
           </div>
 
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-600">
+              {loading && (
+                <span className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+                  Loading...
+                </span>
+              )}
+            </div>
 
+          </div>
           {/* Cards Table */}
-          <div className="flex-1 overflow-auto max-h-[600px] relative">
-            <table className="min-w-full border-collapse">
-              <thead className="bg-white border-b border-gray-200 sticky top-0 z-20 shadow">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Bank</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Card Number</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Cardholder</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Location</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Expiry</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Contact</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {data.rows.map((r) => (
-                  <tr
-                    key={r.id}
-                    onClick={() => handleRowClick(r)}
-                    className={`transition-colors cursor-pointer ${r.id === selectedId ? "bg-blue-100" : "hover:bg-gray-50"
-                      }`}
-                  >
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        {getCardLogo(r) ? (
-                                <img
-                                  className="h-12 w-12 rounded-lg object-contain border border-gray-200 p-1 bg-white"
-                                  src={getCardLogo(r)!}
-                                  alt={r.bank_name}
-                                  onError={(e) => {
-                                    const target = e.target as HTMLImageElement;
-                                    target.style.display = 'none';
-                                    const fallback = target.nextElementSibling as HTMLElement;
-                                    if (fallback) fallback.style.display = 'flex';
-                                  }}
-                                />
-                        ) : (
-                          <div className="h-10 w-10 rounded-lg bg-gray-300 flex items-center justify-center">
-                            {r.bank_name?.charAt(0) || "B"}
-                          </div>
-                        )}
-                        <span>{r.bank_name}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 font-mono">{r.card_number}</td>
-                    <td className="px-6 py-4">{r.cardholder_name}</td>
-                    <td className="px-6 py-4">
-                      {[r.city, r.state_name, r.country_name].filter(Boolean).join(", ")}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="px-2 py-1 text-xs font-bold rounded-full bg-green-100 text-green-800">
-                        {r.expiry_date}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      {r.owner_email && <div>📧 {r.owner_email}</div>}
-                      {r.owner_phone && <div>📱 {r.owner_phone}</div>}
-                    </td>
+          <div className="sticky top-0 z-30 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div className="sticky top-0 z-30 bg-white border-b border-gray-200 px-6 py-4">
+              <div>
+<div className="flex items-center justify-between">
+  {/* LEFT SIDE — Title + record count */}
+  <div>
+    <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2 tracking-tight">
+      💳 Credit Card Records
+    </h3>
+    <p className="text-sm text-gray-500 mt-1 font-medium">
+      Showing {offset + 1} - {Math.min(offset + limit, data.total)} of {data.total} records
+    </p>
+  </div>
+
+  {/* RIGHT SIDE — Pagination */}
+  {data.total > limit && (
+    <div className="flex items-center gap-2">
+      <button
+        disabled={!hasPrev}
+        className={`px-3 py-2 text-sm border rounded-md font-medium 
+          ${!hasPrev 
+            ? "opacity-40 cursor-not-allowed border-gray-200 text-gray-400" 
+            : "border-gray-300 text-gray-700 hover:bg-gray-50"
+          }`}
+        onClick={() => setOffset(Math.max(0, offset - limit))}
+      >
+        Previous
+      </button>
+
+      <span className="text-sm text-gray-500 font-mono">
+        {Math.floor(offset / limit) + 1} of {Math.ceil(data.total / limit)}
+      </span>
+
+      <button
+        disabled={!hasNext}
+        className={`px-4 py-2 text-sm font-semibold border rounded-md transition-all 
+          ${!hasNext 
+            ? 'opacity-50 cursor-not-allowed border-gray-200 text-gray-400' 
+            : 'border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400'
+          }`}
+        onClick={() => setOffset(offset + limit)}
+      >
+        Next
+      </button>
+    </div>
+  )}
+</div>
+
+
+
+
+              </div>
+            </div>
+            <div className="flex-1 overflow-auto max-h-[600px] relative">
+              <table className="min-w-full border-collapse">
+                <thead className="bg-white border-b border-gray-200 sticky top-0 z-20 shadow">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Bank</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Card Number</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Cardholder</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Location</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Expiry</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Contact</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {data.rows.map((r) => (
+                    <tr
+                      key={r.id}
+                      onClick={() => handleRowClick(r)}
+                      className={`transition-colors cursor-pointer ${r.id === selectedId ? "bg-blue-100" : "hover:bg-gray-50"
+                        }`}
+                    >
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          {getCardLogo(r) ? (
+                            <img
+                              className="h-12 w-12 rounded-lg object-contain border border-gray-200 p-1 bg-white"
+                              src={getCardLogo(r)!}
+                              alt={r.bank_name}
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                const fallback = target.nextElementSibling as HTMLElement;
+                                if (fallback) fallback.style.display = 'flex';
+                              }}
+                            />
+                          ) : (
+                            <div className="h-10 w-10 rounded-lg bg-gray-300 flex items-center justify-center">
+                              {r.bank_name?.charAt(0) || "B"}
+                            </div>
+                          )}
+                          <span>{r.bank_name}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 font-mono">{r.card_number}</td>
+                      <td className="px-6 py-4">{r.cardholder_name}</td>
+                      <td className="px-6 py-4">
+                        {[r.city, r.state_name, r.country_name].filter(Boolean).join(", ")}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="px-2 py-1 text-xs font-bold rounded-full bg-green-100 text-green-800">
+                          {r.expiry_date}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        {r.owner_email && <div>📧 {r.owner_email}</div>}
+                        {r.owner_phone && <div>📱 {r.owner_phone}</div>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
