@@ -22,6 +22,14 @@ type Card = {
   longitude: number | null;
 };
 
+export function normalizeBankName(name: string): string {
+  if (!name) return '';
+  return name.trim().toLowerCase().replace(/\s+/g, ' ');
+}
+export function getBankLogoUrl(bankName: string) {
+  if (!bankName) return null;
+  return `/api/bank-logo?bankName=${encodeURIComponent(bankName)}`;
+}
 
 export default function Home() {
   const [filters, setFilters] = useState({
@@ -120,47 +128,7 @@ export default function Home() {
   }, [filters.country]);
 
   // Load bank logos
-  useEffect(() => {
-    const loadLogos = async () => {
-      const logosToLoad: Array<{ bankName: string; cardId: number }> = [];
-      data.rows.forEach((card) => {
-        const key = `${card.id}-${card.bank_name}`;
-        if (!card.bank_logo && !bankLogos[key] && !logoLoadingRef.current.has(key)) {
-          logosToLoad.push({ bankName: card.bank_name, cardId: card.id });
-          logoLoadingRef.current.add(key);
-        }
-      });
-
-      if (logosToLoad.length === 0) return;
-      const batchSize = 10;
-      for (let i = 0; i < logosToLoad.length; i += batchSize) {
-        const batch = logosToLoad.slice(i, i + batchSize);
-        await Promise.all(
-          batch.map(async ({ bankName, cardId }) => {
-            try {
-              const logo = await getBankLogo(bankName, null);
-              const key = `${cardId}-${bankName}`;
-              setBankLogos((prev) => {
-                // Only update if not already set
-                if (prev[key]) return prev;
-                return { ...prev, [key]: logo };
-              });
-            } catch (error) {
-              console.error(`Failed to load logo for ${bankName}:`, error);
-              const key = `${cardId}-${bankName}`;
-              setBankLogos((prev) => {
-                if (prev[key]) return prev;
-                return { ...prev, [key]: null };
-              });
-            }
-          })
-        );
-      }
-    };
-
-    loadLogos();
-  }, [data.rows]);
-
+  
 
   // Initialize Google Map
   useEffect(() => {
@@ -291,15 +259,24 @@ export default function Home() {
 
   // Helper function to get logo for a card
   const getCardLogo = (card: Card): string | null => {
-    const key = `${card.id}-${card.bank_name}`;
-    // First check if we have a fetched logo
-    if (bankLogos[key]) {
-          console.log("image:::"+card.bank_logo);
-      return bankLogos[key];
-    }
-    // Fall back to original logo
-    console.log("image:::"+card.bank_logo);
-    return card.bank_logo;
+  // Use local bank logo first
+  if (card.bank_name) {
+    // Normalize bank name to match your filenames
+    const normalized = card.bank_name.trim().toLowerCase().replace(/\s+/g, '-'); // e.g., "CIMB Bank" -> "cimb-bank"
+    const resultzz = normalized.replace(",-", '-');
+    const resultzzz = resultzz.replace(".-", '-');
+    const resultzzzz = resultzzz.replace('.', '');
+    
+//console.log("resultzzz", resultzzzz);
+ return `/bank-logos/${resultzzzz}.png`;
+     // Assuming PNG files in public/bank-logos/
+  }
+
+  // Fallback to fetched logo
+  const key = `${card.id}-${card.bank_name}`;
+  if (bankLogos[key]) return bankLogos[key];
+
+  return card.bank_logo;
   };
   // Update marker icons when selectedId changes
   useEffect(() => {

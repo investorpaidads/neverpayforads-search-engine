@@ -48,12 +48,12 @@ export async function fetchBankLogo(bankName: string): Promise<string | null> {
       try {
         // Use Clearbit Logo API (free, no API key needed for basic usage)
         const clearbitUrl = `https://logo.clearbit.com/${domain}`;
-   //     const response = await fetch(clearbitUrl, { method: 'HEAD' });
+        const response = await fetch(clearbitUrl, { method: 'HEAD' });
         
-    //    if (response.ok) {
+        if (response.ok) {
           LOGO_CACHE.set(cacheKey, clearbitUrl);
           return clearbitUrl;
-    //    }
+        }
       } catch (e) {
         // Continue to next attempt
       }
