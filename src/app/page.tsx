@@ -248,7 +248,7 @@ export default function Home() {
       }
     };
 
-    initializeMap();
+   // initializeMap();
 
     return () => {
       markersRef.current.forEach((m) => m.setMap(null));
