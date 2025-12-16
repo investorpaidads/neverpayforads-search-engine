@@ -131,7 +131,7 @@ export default function Home() {
   
 
   // Initialize Google Map
-  useEffect(() => {
+  /*useEffect(() => {
     let map: any;
     let heatmap: any;
 
@@ -192,7 +192,7 @@ export default function Home() {
 `),
           scaledSize: new google.maps.Size(52, 66),
           anchor: new google.maps.Point(26, 66),
-        };
+        };*/
 
         // Clear previous markers
         markersRef.current.forEach((m) => m.setMap(null));
